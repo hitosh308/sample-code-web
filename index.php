@@ -131,8 +131,11 @@ $filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>サンプルコード集</title>
-    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/style.css?v=1.0.1">
 </head>
 <body>
 <header class="site-header">
@@ -200,11 +203,11 @@ $filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
         <div class="content-column">
             <div class="content-bar">
                 <div>
-                    <p class="eyebrow">Browse</p>
                     <h2>サンプルコード一覧</h2>
                     <p class="subtitle">タグやキーワードで好みのスニペットを素早く見つけられます。</p>
                 </div>
                 <button type="button" class="filter-toggle" aria-controls="search-panel" aria-expanded="false">
+                    <span class="filter-toggle__icon" aria-hidden="true"></span>
                     <span>条件を開く</span>
                 </button>
             </div>
@@ -277,12 +280,6 @@ $filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
     <div class="panel-backdrop" id="panel-backdrop" hidden></div>
 </main>
 
-<footer class="site-footer">
-    <div class="container">
-        <p>JSONファイルを追加するだけでスニペットが増えます。閲覧専用アプリです。</p>
-    </div>
-</footer>
-
-<script src="assets/script.js"></script>
+<script src="assets/script.js?v=1.0.1"></script>
 </body>
 </html>
