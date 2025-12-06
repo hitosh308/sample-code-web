@@ -138,13 +138,32 @@ $keyword = isset($_GET['keyword']) ? (string)$_GET['keyword'] : '';
 $language = isset($_GET['language']) ? trim((string)$_GET['language']) : '';
 
 $allTags = [];
+$tagsByLanguage = [];
+$normalizedLanguage = mb_strtolower($language);
+
 foreach ($snippets as $snippet) {
+    $snippetLanguage = mb_strtolower((string)($snippet['language'] ?? ''));
     foreach ($snippet['tags'] ?? [] as $tag) {
-        $allTags[] = (string)$tag;
+        $tagValue = (string)$tag;
+        $allTags[] = $tagValue;
+        if ($snippetLanguage !== '') {
+            $tagsByLanguage[$snippetLanguage][] = $tagValue;
+        }
     }
 }
-$availableTags = array_values(array_unique($allTags));
+
+$availableTags = $normalizedLanguage === ''
+    ? array_values(array_unique($allTags))
+    : array_values(array_unique($tagsByLanguage[$normalizedLanguage] ?? []));
 sort($availableTags, SORT_NATURAL | SORT_FLAG_CASE);
+
+$normalizedAvailableTags = array_map(function ($tag) {
+    return mb_strtolower($tag);
+}, $availableTags);
+
+$searchTags = array_values(array_filter($searchTags, function ($tag) use ($normalizedAvailableTags) {
+    return in_array(mb_strtolower($tag), $normalizedAvailableTags, true);
+}));
 
 $allLanguages = array_map(function ($snippet) {
     return (string)($snippet['language'] ?? '');
@@ -154,9 +173,9 @@ $availableLanguages = array_values(array_filter(array_unique($allLanguages), fun
 }));
 sort($availableLanguages, SORT_NATURAL | SORT_FLAG_CASE);
 
-$filteredSnippets = filter_snippets_by_tags($snippets, $searchTags);
+$filteredSnippets = filter_snippets_by_language($snippets, $language);
+$filteredSnippets = filter_snippets_by_tags($filteredSnippets, $searchTags);
 $filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
-$filteredSnippets = filter_snippets_by_language($filteredSnippets, $language);
 
 $totalSnippets = count($snippets);
 
@@ -204,37 +223,52 @@ if (!$hasSearch) {
             <div class="panel-header">
                 <div>
                     <p class="eyebrow">Refine</p>
-                    <h2>タグ・キーワード</h2>
+                    <h2>言語・タグ・キーワード</h2>
                 </div>
                 <button type="button" class="panel-close" aria-label="検索条件を閉じる">&times;</button>
             </div>
 
             <form method="get" class="search-form">
-                <div class="tag-select" aria-label="タグ選択">
-                    <?php if ($availableTags === []): ?>
-                        <p class="empty">登録済みのタグがありません。</p>
-                    <?php else: ?>
-                        <button type="button" class="tag-select__control" aria-haspopup="listbox" aria-expanded="false">
-                            タグを選択
-                        </button>
-                        <div class="tag-select__menu" hidden>
-                            <div class="tag-select__search">
-                                <input type="text" class="tag-select__filter" placeholder="タグを検索...">
+                <div class="search-field">
+                    <label for="language">言語</label>
+                    <select id="language" name="language" class="language-select">
+                        <option value="">言語を選択</option>
+                        <?php foreach ($availableLanguages as $languageOption): ?>
+                            <option value="<?php echo htmlspecialchars($languageOption, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $languageOption === $language ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($languageOption, ENT_QUOTES, 'UTF-8'); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="search-field">
+                    <span class="search-field__label">タグ</span>
+                    <div class="tag-select" aria-label="タグ選択">
+                        <?php if ($availableTags === []): ?>
+                            <p class="empty">登録済みのタグがありません。</p>
+                        <?php else: ?>
+                            <button type="button" class="tag-select__control" aria-haspopup="listbox" aria-expanded="false">
+                                タグを選択
+                            </button>
+                            <div class="tag-select__menu" hidden>
+                                <div class="tag-select__search">
+                                    <input type="text" class="tag-select__filter" placeholder="タグを検索...">
+                                </div>
+                                <div class="tag-select__options" role="listbox" aria-multiselectable="true">
+                                    <?php foreach ($availableTags as $tag): ?>
+                                        <?php
+                                            $tagId = 'tag-' . htmlspecialchars(preg_replace('/[^a-zA-Z0-9_-]/', '-', $tag), ENT_QUOTES, 'UTF-8');
+                                            $isChecked = in_array($tag, $searchTags, true);
+                                        ?>
+                                        <label for="<?php echo $tagId; ?>" class="tag-option <?php echo $isChecked ? 'is-active' : ''; ?>" data-label="#<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <input type="checkbox" id="<?php echo $tagId; ?>" name="tags[]" value="<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $isChecked ? 'checked' : ''; ?>>
+                                            <span>#<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
-                            <div class="tag-select__options" role="listbox" aria-multiselectable="true">
-                                <?php foreach ($availableTags as $tag): ?>
-                                    <?php
-                                        $tagId = 'tag-' . htmlspecialchars(preg_replace('/[^a-zA-Z0-9_-]/', '-', $tag), ENT_QUOTES, 'UTF-8');
-                                        $isChecked = in_array($tag, $searchTags, true);
-                                    ?>
-                                    <label for="<?php echo $tagId; ?>" class="tag-option <?php echo $isChecked ? 'is-active' : ''; ?>" data-label="#<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?>">
-                                        <input type="checkbox" id="<?php echo $tagId; ?>" name="tags[]" value="<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $isChecked ? 'checked' : ''; ?>>
-                                        <span>#<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?></span>
-                                    </label>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                    <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <?php if ($searchTags !== []): ?>
@@ -252,17 +286,12 @@ if (!$hasSearch) {
                     </div>
                 <?php endif; ?>
 
-                <div class="search-input-row">
-                    <label for="language" class="sr-only">言語</label>
-                    <select id="language" name="language" class="language-select">
-                        <option value="">言語を選択</option>
-                        <?php foreach ($availableLanguages as $languageOption): ?>
-                            <option value="<?php echo htmlspecialchars($languageOption, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $languageOption === $language ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($languageOption, ENT_QUOTES, 'UTF-8'); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                <div class="search-field">
+                    <label for="keyword">キーワード</label>
                     <input type="text" id="keyword" name="keyword" value="<?php echo htmlspecialchars($keyword, ENT_QUOTES, 'UTF-8'); ?>" placeholder="例: ループ, 配列, comment">
+                </div>
+
+                <div class="search-actions">
                     <button type="submit">検索</button>
                 </div>
             </form>

@@ -127,13 +127,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  function resetTagSelections() {
+    tagCheckboxes.forEach((input) => {
+      input.checked = false;
+      input.closest('.tag-option')?.classList.remove('is-active');
+    });
+    updateTagControlLabel();
+    document.querySelector('.selected-tags')?.remove();
+  }
+
   if (clearTagsButton) {
     clearTagsButton.addEventListener('click', () => {
-      tagCheckboxes.forEach((input) => {
-        input.checked = false;
-        input.closest('.tag-option')?.classList.remove('is-active');
-      });
-      updateTagControlLabel();
+      resetTagSelections();
       searchForm?.submit();
     });
   }
@@ -157,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
   filterTagOptions();
 
   languageSelect?.addEventListener('change', () => {
+    resetTagSelections();
     searchForm?.submit();
   });
 
