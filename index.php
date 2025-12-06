@@ -222,7 +222,6 @@ if (!$hasSearch) {
         <aside class="search-panel" id="search-panel" aria-label="検索条件">
             <div class="panel-header">
                 <div>
-                    <p class="eyebrow">Refine</p>
                     <h2>言語・タグ・キーワード</h2>
                 </div>
                 <button type="button" class="panel-close" aria-label="検索条件を閉じる">&times;</button>
