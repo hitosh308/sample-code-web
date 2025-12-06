@@ -140,7 +140,7 @@ $filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>サンプルコード集</title>
-    <link rel="stylesheet" href="assets/style.css?v=1.0.1">
+    <link rel="stylesheet" href="assets/style.css?v=1.0.2">
 </head>
 <body>
 <header class="site-header">
@@ -172,20 +172,30 @@ $filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
             </div>
 
             <form method="get" class="search-form">
-                <div class="tag-toggle-group" aria-label="タグ選択">
+                <div class="tag-select" aria-label="タグ選択">
                     <?php if ($availableTags === []): ?>
                         <p class="empty">登録済みのタグがありません。</p>
                     <?php else: ?>
-                        <?php foreach ($availableTags as $tag): ?>
-                            <?php
-                                $tagId = 'tag-' . htmlspecialchars(preg_replace('/[^a-zA-Z0-9_-]/', '-', $tag), ENT_QUOTES, 'UTF-8');
-                                $isChecked = in_array($tag, $searchTags, true);
-                            ?>
-                            <label for="<?php echo $tagId; ?>" class="tag-toggle <?php echo $isChecked ? 'is-active' : ''; ?>">
-                                <input type="checkbox" id="<?php echo $tagId; ?>" name="tags[]" value="<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $isChecked ? 'checked' : ''; ?>>
-                                <span>#<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?></span>
-                            </label>
-                        <?php endforeach; ?>
+                        <button type="button" class="tag-select__control" aria-haspopup="listbox" aria-expanded="false">
+                            タグを選択
+                        </button>
+                        <div class="tag-select__menu" hidden>
+                            <div class="tag-select__search">
+                                <input type="text" class="tag-select__filter" placeholder="タグを検索...">
+                            </div>
+                            <div class="tag-select__options" role="listbox" aria-multiselectable="true">
+                                <?php foreach ($availableTags as $tag): ?>
+                                    <?php
+                                        $tagId = 'tag-' . htmlspecialchars(preg_replace('/[^a-zA-Z0-9_-]/', '-', $tag), ENT_QUOTES, 'UTF-8');
+                                        $isChecked = in_array($tag, $searchTags, true);
+                                    ?>
+                                    <label for="<?php echo $tagId; ?>" class="tag-option <?php echo $isChecked ? 'is-active' : ''; ?>" data-label="#<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?>">
+                                        <input type="checkbox" id="<?php echo $tagId; ?>" name="tags[]" value="<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $isChecked ? 'checked' : ''; ?>>
+                                        <span>#<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?></span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     <?php endif; ?>
                 </div>
 
@@ -291,6 +301,6 @@ $filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
     <div class="panel-backdrop" id="panel-backdrop" hidden></div>
 </main>
 
-<script src="assets/script.js?v=1.0.1"></script>
+<script src="assets/script.js?v=1.0.2"></script>
 </body>
 </html>
