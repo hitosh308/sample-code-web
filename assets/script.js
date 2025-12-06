@@ -5,6 +5,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const buttons = document.querySelectorAll('.copy-btn');
   const tagToggles = document.querySelectorAll('.tag-toggle input[type="checkbox"]');
   const searchForm = document.querySelector('.search-form');
+  const filterToggle = document.querySelector('.filter-toggle');
+  const filterPanel = document.getElementById('search-panel');
+  const panelBackdrop = document.getElementById('panel-backdrop');
+  const panelClose = document.querySelector('.panel-close');
+  const selectedTagButtons = document.querySelectorAll('.selected-tag');
+  const clearTagsButton = document.querySelector('.clear-tags');
 
   buttons.forEach((button) => {
     button.addEventListener('click', async () => {
@@ -42,6 +48,54 @@ document.addEventListener('DOMContentLoaded', () => {
         searchForm.submit();
       }
     });
+  });
+
+  selectedTagButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const tagValue = button.getAttribute('data-tag');
+      const checkbox = document.querySelector(`.tag-toggle input[value="${CSS.escape(tagValue ?? '')}"]`);
+      if (checkbox) {
+        checkbox.checked = false;
+        checkbox.closest('.tag-toggle')?.classList.remove('is-active');
+      }
+      searchForm?.submit();
+    });
+  });
+
+  if (clearTagsButton) {
+    clearTagsButton.addEventListener('click', () => {
+      tagToggles.forEach((input) => {
+        input.checked = false;
+        input.closest('.tag-toggle')?.classList.remove('is-active');
+      });
+      searchForm?.submit();
+    });
+  }
+
+  function togglePanel(open) {
+    if (!filterPanel) return;
+    const shouldOpen = open ?? !filterPanel.classList.contains('is-open');
+    filterPanel.classList.toggle('is-open', shouldOpen);
+    filterToggle?.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+    if (panelBackdrop) {
+      panelBackdrop.hidden = false;
+      panelBackdrop.classList.toggle('is-active', shouldOpen);
+      if (!shouldOpen) {
+        setTimeout(() => {
+          panelBackdrop.hidden = true;
+        }, 180);
+      }
+    }
+  }
+
+  filterToggle?.addEventListener('click', () => togglePanel());
+  panelClose?.addEventListener('click', () => togglePanel(false));
+  panelBackdrop?.addEventListener('click', () => togglePanel(false));
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      togglePanel(false);
+    }
   });
 });
 
