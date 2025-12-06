@@ -91,6 +91,23 @@ function filter_snippets_by_keyword(array $snippets, string $keyword): array
     }));
 }
 
+// 言語での絞り込み
+function filter_snippets_by_language(array $snippets, string $language): array
+{
+    $normalizedLanguage = trim($language);
+
+    if ($normalizedLanguage === '') {
+        return $snippets;
+    }
+
+    $normalizedLanguage = mb_strtolower($normalizedLanguage);
+
+    return array_values(array_filter($snippets, function (array $snippet) use ($normalizedLanguage) {
+        $language = mb_strtolower((string)($snippet['language'] ?? ''));
+        return $language === $normalizedLanguage;
+    }));
+}
+
 $dataDir = __DIR__ . '/data';
 $errorMessages = [];
 $snippets = [];
@@ -118,6 +135,7 @@ if (is_array($tagInputRaw)) {
 }
 
 $keyword = isset($_GET['keyword']) ? (string)$_GET['keyword'] : '';
+$language = isset($_GET['language']) ? trim((string)$_GET['language']) : '';
 
 $allTags = [];
 foreach ($snippets as $snippet) {
@@ -128,8 +146,23 @@ foreach ($snippets as $snippet) {
 $availableTags = array_values(array_unique($allTags));
 sort($availableTags, SORT_NATURAL | SORT_FLAG_CASE);
 
+$allLanguages = array_map(function ($snippet) {
+    return (string)($snippet['language'] ?? '');
+}, $snippets);
+$availableLanguages = array_values(array_filter(array_unique($allLanguages), function ($lang) {
+    return trim($lang) !== '';
+}));
+sort($availableLanguages, SORT_NATURAL | SORT_FLAG_CASE);
+
 $filteredSnippets = filter_snippets_by_tags($snippets, $searchTags);
 $filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
+$filteredSnippets = filter_snippets_by_language($filteredSnippets, $language);
+
+$hasSearch = $searchTags !== [] || trim($keyword) !== '' || trim($language) !== '';
+
+if (!$hasSearch) {
+    $filteredSnippets = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -215,6 +248,15 @@ $filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
                 <?php endif; ?>
 
                 <div class="search-input-row">
+                    <label for="language" class="sr-only">言語</label>
+                    <select id="language" name="language" class="language-select">
+                        <option value="">言語を選択</option>
+                        <?php foreach ($availableLanguages as $languageOption): ?>
+                            <option value="<?php echo htmlspecialchars($languageOption, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $languageOption === $language ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($languageOption, ENT_QUOTES, 'UTF-8'); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                     <input type="text" id="keyword" name="keyword" value="<?php echo htmlspecialchars($keyword, ENT_QUOTES, 'UTF-8'); ?>" placeholder="例: ループ, 配列, comment">
                     <button type="submit">検索</button>
                 </div>
@@ -233,7 +275,7 @@ $filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
                 </button>
             </div>
 
-            <?php if ($searchTags !== [] || trim($keyword) !== ''): ?>
+            <?php if ($hasSearch): ?>
                 <p class="search-summary">次の条件で絞り込み中:
                     <?php if ($searchTags !== []): ?>
                         <span>タグ:</span>
@@ -244,11 +286,16 @@ $filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
                     <?php if (trim($keyword) !== ''): ?>
                         <span class="keyword">キーワード: 「<?php echo htmlspecialchars($keyword, ENT_QUOTES, 'UTF-8'); ?>」</span>
                     <?php endif; ?>
+                    <?php if (trim($language) !== ''): ?>
+                        <span class="keyword">言語: <?php echo htmlspecialchars($language, ENT_QUOTES, 'UTF-8'); ?></span>
+                    <?php endif; ?>
                 </p>
             <?php endif; ?>
 
             <section class="snippets">
-                <?php if ($filteredSnippets === []): ?>
+                <?php if (!$hasSearch): ?>
+                    <p class="empty">検索条件を設定してください。</p>
+                <?php elseif ($filteredSnippets === []): ?>
                     <p class="empty">条件に一致するスニペットがありません。</p>
                 <?php else: ?>
                     <?php foreach ($filteredSnippets as $index => $snippet): ?>
