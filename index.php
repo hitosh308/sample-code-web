@@ -175,7 +175,8 @@ if (!$hasSearch) {
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>サンプルコード集</title>
-    <link rel="stylesheet" href="assets/style.css?v=1.0.2">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <link rel="stylesheet" href="assets/style.css?v=1.0.3">
 </head>
 <body>
 <header class="site-header">
@@ -320,6 +321,7 @@ if (!$hasSearch) {
                             $codeId = 'code-' . $index;
                             $title = htmlspecialchars($snippet['title'] ?? '無題', ENT_QUOTES, 'UTF-8');
                             $language = htmlspecialchars($snippet['language'] ?? 'N/A', ENT_QUOTES, 'UTF-8');
+                            $languageSlug = htmlspecialchars(preg_replace('/[^a-zA-Z0-9\+#-]/', '-', strtolower($snippet['language'] ?? '')) ?: 'plaintext', ENT_QUOTES, 'UTF-8');
                             $description = htmlspecialchars($snippet['description'] ?? '', ENT_QUOTES, 'UTF-8');
                             $createdAt = htmlspecialchars($snippet['created_at'] ?? '', ENT_QUOTES, 'UTF-8');
                             $updatedAt = htmlspecialchars($snippet['updated_at'] ?? '', ENT_QUOTES, 'UTF-8');
@@ -351,8 +353,8 @@ if (!$hasSearch) {
                                 <?php endforeach; ?>
                             </div>
 
-                            <div class="code-block">
-                                <pre><code id="<?php echo $codeId; ?>"><?php echo htmlspecialchars((string)($snippet['code'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></code></pre>
+                            <div class="code-block" data-language="<?php echo $language; ?>">
+                                <pre><code id="<?php echo $codeId; ?>" class="language-<?php echo $languageSlug; ?>"><?php echo htmlspecialchars((string)($snippet['code'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></code></pre>
                                 <button class="copy-btn" data-target="<?php echo $codeId; ?>">コピー</button>
                             </div>
                         </article>
@@ -364,7 +366,7 @@ if (!$hasSearch) {
 
     <div class="panel-backdrop" id="panel-backdrop" hidden></div>
 </main>
-
-<script src="assets/script.js?v=1.0.2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="assets/script.js?v=1.0.3"></script>
 </body>
 </html>
