@@ -181,7 +181,7 @@ if (!$hasSearch) {
 <body>
 <header class="site-header">
     <div class="container">
-        <h1>サンプルコード集</h1>
+        <h1><a href="index.php">サンプルコード集</a></h1>
         <p class="description">
             複数言語のサンプルコードをタグで絞り込み検索できます。（全<?php echo number_format($totalSnippets); ?>件登録）
         </p>
