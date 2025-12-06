@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const tagOptions = tagSelect ? Array.from(tagSelect.querySelectorAll('.tag-option')) : [];
   const tagCheckboxes = tagSelect ? Array.from(tagSelect.querySelectorAll('.tag-option input[type="checkbox"]')) : [];
   const searchForm = document.querySelector('.search-form');
+  const languageSelect = document.querySelector('.language-select');
   const filterToggle = document.querySelector('.filter-toggle');
   const filterPanel = document.getElementById('search-panel');
   const panelBackdrop = document.getElementById('panel-backdrop');
@@ -128,6 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   updateTagControlLabel();
+
+  languageSelect?.addEventListener('change', () => {
+    searchForm?.submit();
+  });
 
   function togglePanel(open) {
     if (!filterPanel) return;
