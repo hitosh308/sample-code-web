@@ -3,6 +3,8 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   const buttons = document.querySelectorAll('.copy-btn');
+  const tagToggles = document.querySelectorAll('.tag-toggle input[type="checkbox"]');
+  const searchForm = document.querySelector('.search-form');
 
   buttons.forEach((button) => {
     button.addEventListener('click', async () => {
@@ -25,6 +27,19 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('コピーに失敗しました', error);
         fallbackCopy(codeText);
         showCopied(button);
+      }
+    });
+  });
+
+  tagToggles.forEach((input) => {
+    input.addEventListener('change', () => {
+      const parentLabel = input.closest('.tag-toggle');
+      if (parentLabel) {
+        parentLabel.classList.toggle('is-active', input.checked);
+      }
+
+      if (searchForm) {
+        searchForm.submit();
       }
     });
   });
