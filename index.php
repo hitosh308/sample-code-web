@@ -66,6 +66,26 @@ function filter_snippets_by_tags(array $snippets, array $searchTags): array
     }));
 }
 
+// 説明文やコード（コメント含む）に対するキーワード検索
+function filter_snippets_by_keyword(array $snippets, string $keyword): array
+{
+    $trimmedKeyword = trim($keyword);
+
+    if ($trimmedKeyword === '') {
+        return $snippets;
+    }
+
+    return array_values(array_filter($snippets, function (array $snippet) use ($trimmedKeyword) {
+        $haystack = implode('\n', [
+            (string)($snippet['title'] ?? ''),
+            (string)($snippet['description'] ?? ''),
+            (string)($snippet['code'] ?? ''),
+        ]);
+
+        return mb_stripos($haystack, $trimmedKeyword) !== false;
+    }));
+}
+
 $dataDir = __DIR__ . '/data';
 $errorMessage = '';
 $snippets = [];
@@ -76,11 +96,35 @@ if (!is_dir($dataDir)) {
     $snippets = load_all_snippets($dataDir);
 }
 
-$tagInput = $_GET['tags'] ?? '';
-$searchTags = array_values(array_filter(array_map('trim', explode(',', (string)$tagInput)), function ($tag) {
-    return $tag !== '';
-}));
+$tagInputRaw = $_GET['tags'] ?? '';
+$searchTags = [];
+
+if (is_array($tagInputRaw)) {
+    foreach ($tagInputRaw as $tag) {
+        $trimmed = trim((string)$tag);
+        if ($trimmed !== '') {
+            $searchTags[] = $trimmed;
+        }
+    }
+} else {
+    $searchTags = array_values(array_filter(array_map('trim', explode(',', (string)$tagInputRaw)), function ($tag) {
+        return $tag !== '';
+    }));
+}
+
+$keyword = isset($_GET['keyword']) ? (string)$_GET['keyword'] : '';
+
+$allTags = [];
+foreach ($snippets as $snippet) {
+    foreach ($snippet['tags'] ?? [] as $tag) {
+        $allTags[] = (string)$tag;
+    }
+}
+$availableTags = array_values(array_unique($allTags));
+sort($availableTags, SORT_NATURAL | SORT_FLAG_CASE);
+
 $filteredSnippets = filter_snippets_by_tags($snippets, $searchTags);
+$filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -104,19 +148,42 @@ $filteredSnippets = filter_snippets_by_tags($snippets, $searchTags);
     <?php endif; ?>
 
     <section class="search-section">
-        <h2>タグ検索</h2>
+        <h2>タグ・キーワード検索</h2>
         <form method="get" class="search-form">
-            <label for="tags">タグをカンマ区切りで入力（例: php, for）</label>
+            <div class="tag-toggle-group" aria-label="タグ選択">
+                <?php if ($availableTags === []): ?>
+                    <p class="empty">登録済みのタグがありません。</p>
+                <?php else: ?>
+                    <?php foreach ($availableTags as $tag): ?>
+                        <?php
+                            $tagId = 'tag-' . htmlspecialchars(preg_replace('/[^a-zA-Z0-9_-]/', '-', $tag), ENT_QUOTES, 'UTF-8');
+                            $isChecked = in_array($tag, $searchTags, true);
+                        ?>
+                        <label for="<?php echo $tagId; ?>" class="tag-toggle <?php echo $isChecked ? 'is-active' : ''; ?>">
+                            <input type="checkbox" id="<?php echo $tagId; ?>" name="tags[]" value="<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $isChecked ? 'checked' : ''; ?>>
+                            <span>#<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+
+            <label for="keyword">キーワード（説明文やコードコメントを検索）</label>
             <div class="search-input-row">
-                <input type="text" id="tags" name="tags" value="<?php echo htmlspecialchars((string)$tagInput, ENT_QUOTES, 'UTF-8'); ?>" placeholder="php, for, 入門">
+                <input type="text" id="keyword" name="keyword" value="<?php echo htmlspecialchars($keyword, ENT_QUOTES, 'UTF-8'); ?>" placeholder="例: ループ, 配列, comment">
                 <button type="submit">検索</button>
             </div>
         </form>
-        <?php if ($searchTags !== []): ?>
-            <p class="search-summary">次のタグを含むスニペットを表示中: 
-                <?php foreach ($searchTags as $tag): ?>
-                    <span class="tag">#<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?></span>
-                <?php endforeach; ?>
+        <?php if ($searchTags !== [] || trim($keyword) !== ''): ?>
+            <p class="search-summary">次の条件で絞り込み中:
+                <?php if ($searchTags !== []): ?>
+                    <span>タグ:</span>
+                    <?php foreach ($searchTags as $tag): ?>
+                        <span class="tag">#<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?></span>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                <?php if (trim($keyword) !== ''): ?>
+                    <span class="keyword">キーワード: 「<?php echo htmlspecialchars($keyword, ENT_QUOTES, 'UTF-8'); ?>」</span>
+                <?php endif; ?>
             </p>
         <?php endif; ?>
     </section>
