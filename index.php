@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 // data ディレクトリを基準に全てのスニペットを読み込む
-function load_all_snippets(string $dataDir): array
+function load_all_snippets(string $dataDir, array &$errors): array
 {
     if (!is_dir($dataDir)) {
         return [];
@@ -14,13 +14,18 @@ function load_all_snippets(string $dataDir): array
     foreach ($files as $file) {
         $json = @file_get_contents($file);
         if ($json === false) {
-            // 読み込み失敗時はスキップ
+            $errors[] = sprintf('ファイル「%s」の読み込みに失敗しました。', basename($file));
             continue;
         }
 
         $decoded = json_decode($json, true);
+        if ($decoded === null && json_last_error() !== JSON_ERROR_NONE) {
+            $errors[] = sprintf('ファイル「%s」のJSONデコードに失敗しました: %s', basename($file), json_last_error_msg());
+            continue;
+        }
+
         if (!is_array($decoded)) {
-            // JSONの形式が配列でない場合はスキップ
+            $errors[] = sprintf('ファイル「%s」の形式が不正です。配列のJSONを期待しています。', basename($file));
             continue;
         }
 
@@ -87,13 +92,13 @@ function filter_snippets_by_keyword(array $snippets, string $keyword): array
 }
 
 $dataDir = __DIR__ . '/data';
-$errorMessage = '';
+$errorMessages = [];
 $snippets = [];
 
 if (!is_dir($dataDir)) {
-    $errorMessage = 'data ディレクトリが見つかりません。アプリを利用するには data 配下に JSON ファイルを配置してください。';
+    $errorMessages[] = 'data ディレクトリが見つかりません。アプリを利用するには data 配下に JSON ファイルを配置してください。';
 } else {
-    $snippets = load_all_snippets($dataDir);
+    $snippets = load_all_snippets($dataDir, $errorMessages);
 }
 
 $tagInputRaw = $_GET['tags'] ?? '';
@@ -146,8 +151,14 @@ $filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
 </header>
 
 <main class="container">
-    <?php if ($errorMessage !== ''): ?>
-        <div class="alert alert-error"><?php echo htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8'); ?></div>
+    <?php if ($errorMessages !== []): ?>
+        <div class="alert alert-error" role="alert">
+            <ul>
+                <?php foreach ($errorMessages as $message): ?>
+                    <li><?php echo htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
     <?php endif; ?>
 
     <div class="app-layout">
