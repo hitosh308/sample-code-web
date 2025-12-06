@@ -320,8 +320,11 @@ if (!$hasSearch) {
                         <?php
                             $codeId = 'code-' . $index;
                             $title = htmlspecialchars($snippet['title'] ?? '無題', ENT_QUOTES, 'UTF-8');
-                            $language = htmlspecialchars($snippet['language'] ?? 'N/A', ENT_QUOTES, 'UTF-8');
-                            $languageSlug = htmlspecialchars(preg_replace('/[^a-zA-Z0-9\+#-]/', '-', strtolower($snippet['language'] ?? '')) ?: 'plaintext', ENT_QUOTES, 'UTF-8');
+                            $languageRaw = (string)($snippet['language'] ?? 'N/A');
+                            $languageDisplay = htmlspecialchars($languageRaw, ENT_QUOTES, 'UTF-8');
+                            $languageKey = strtolower($languageRaw);
+                            $highlightLanguage = $languageKey === 'gas' ? 'javascript' : $languageKey;
+                            $languageSlug = htmlspecialchars(preg_replace('/[^a-zA-Z0-9\+#-]/', '-', $highlightLanguage) ?: 'plaintext', ENT_QUOTES, 'UTF-8');
                             $description = htmlspecialchars($snippet['description'] ?? '', ENT_QUOTES, 'UTF-8');
                             $createdAt = htmlspecialchars($snippet['created_at'] ?? '', ENT_QUOTES, 'UTF-8');
                             $updatedAt = htmlspecialchars($snippet['updated_at'] ?? '', ENT_QUOTES, 'UTF-8');
@@ -331,7 +334,7 @@ if (!$hasSearch) {
                             <header class="snippet-header">
                                 <div>
                                     <h3><?php echo $title; ?></h3>
-                                    <p class="meta">言語: <span class="badge language"><?php echo $language; ?></span></p>
+                                    <p class="meta">言語: <span class="badge language"><?php echo $languageDisplay; ?></span></p>
                                 </div>
                                 <div class="timestamps">
                                     <?php if ($createdAt !== ''): ?>
@@ -353,7 +356,7 @@ if (!$hasSearch) {
                                 <?php endforeach; ?>
                             </div>
 
-                            <div class="code-block" data-language="<?php echo $language; ?>">
+                            <div class="code-block" data-language="<?php echo $languageDisplay; ?>">
                                 <pre><code id="<?php echo $codeId; ?>" class="language-<?php echo $languageSlug; ?>"><?php echo htmlspecialchars((string)($snippet['code'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></code></pre>
                                 <button class="copy-btn" data-target="<?php echo $codeId; ?>">コピー</button>
                             </div>
