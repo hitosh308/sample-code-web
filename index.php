@@ -176,7 +176,7 @@ if (!$hasSearch) {
     <meta http-equiv="Expires" content="0">
     <title>サンプルコード集</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-    <link rel="stylesheet" href="assets/style.css?v=1.0.3">
+    <link rel="stylesheet" href="assets/style.css?v=1.0.4">
 </head>
 <body>
 <header class="site-header">
@@ -367,6 +367,6 @@ if (!$hasSearch) {
     <div class="panel-backdrop" id="panel-backdrop" hidden></div>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<script src="assets/script.js?v=1.0.3"></script>
+<script src="assets/script.js?v=1.0.4"></script>
 </body>
 </html>
