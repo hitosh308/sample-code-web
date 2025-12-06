@@ -3,7 +3,12 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   const buttons = document.querySelectorAll('.copy-btn');
-  const tagToggles = document.querySelectorAll('.tag-toggle input[type="checkbox"]');
+  const tagSelect = document.querySelector('.tag-select');
+  const tagControl = tagSelect?.querySelector('.tag-select__control');
+  const tagMenu = tagSelect?.querySelector('.tag-select__menu');
+  const tagFilterInput = tagSelect?.querySelector('.tag-select__filter');
+  const tagOptions = tagSelect ? Array.from(tagSelect.querySelectorAll('.tag-option')) : [];
+  const tagCheckboxes = tagSelect ? Array.from(tagSelect.querySelectorAll('.tag-option input[type="checkbox"]')) : [];
   const searchForm = document.querySelector('.search-form');
   const filterToggle = document.querySelector('.filter-toggle');
   const filterPanel = document.getElementById('search-panel');
@@ -37,40 +42,92 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  tagToggles.forEach((input) => {
-    input.addEventListener('change', () => {
-      const parentLabel = input.closest('.tag-toggle');
-      if (parentLabel) {
-        parentLabel.classList.toggle('is-active', input.checked);
-      }
+  function updateTagControlLabel() {
+    if (!tagControl) return;
+    const selected = tagCheckboxes
+      .filter((input) => input.checked)
+      .map((input) => input.value);
 
-      if (searchForm) {
-        searchForm.submit();
-      }
+    if (selected.length === 0) {
+      tagControl.textContent = 'タグを選択';
+    } else {
+      const preview = selected.slice(0, 3).map((tag) => `#${tag}`);
+      const more = selected.length > 3 ? `ほか${selected.length - 3}件` : '';
+      tagControl.textContent = [preview.join(', '), more].filter(Boolean).join(' / ');
+    }
+
+    tagOptions.forEach((option) => {
+      const input = option.querySelector('input');
+      option.classList.toggle('is-active', Boolean(input?.checked));
+    });
+  }
+
+  function toggleTagMenu(open) {
+    if (!tagMenu || !tagControl) return;
+    const shouldOpen = open ?? tagMenu.hidden;
+    tagMenu.hidden = !shouldOpen;
+    tagControl.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+    if (shouldOpen) {
+      tagFilterInput?.focus();
+    }
+  }
+
+  tagControl?.addEventListener('click', () => toggleTagMenu());
+
+  tagFilterInput?.addEventListener('input', () => {
+    const term = tagFilterInput.value.trim().toLowerCase();
+    tagOptions.forEach((option) => {
+      const label = option.dataset.label?.toLowerCase() ?? '';
+      option.hidden = term !== '' && !label.includes(term);
+    });
+  });
+
+  tagCheckboxes.forEach((input) => {
+    input.addEventListener('change', () => {
+      updateTagControlLabel();
+      searchForm?.submit();
     });
   });
 
   selectedTagButtons.forEach((button) => {
     button.addEventListener('click', () => {
       const tagValue = button.getAttribute('data-tag');
-      const checkbox = document.querySelector(`.tag-toggle input[value="${CSS.escape(tagValue ?? '')}"]`);
+      const checkbox = tagSelect?.querySelector(`input[value="${CSS.escape(tagValue ?? '')}"]`);
       if (checkbox) {
         checkbox.checked = false;
-        checkbox.closest('.tag-toggle')?.classList.remove('is-active');
+        checkbox.closest('.tag-option')?.classList.remove('is-active');
       }
+      updateTagControlLabel();
       searchForm?.submit();
     });
   });
 
   if (clearTagsButton) {
     clearTagsButton.addEventListener('click', () => {
-      tagToggles.forEach((input) => {
+      tagCheckboxes.forEach((input) => {
         input.checked = false;
-        input.closest('.tag-toggle')?.classList.remove('is-active');
+        input.closest('.tag-option')?.classList.remove('is-active');
       });
+      updateTagControlLabel();
       searchForm?.submit();
     });
   }
+
+  document.addEventListener('click', (event) => {
+    if (!tagSelect || !tagMenu || !tagControl) return;
+    if (tagSelect.contains(event.target)) return;
+    if (!tagMenu.hidden) {
+      toggleTagMenu(false);
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      toggleTagMenu(false);
+    }
+  });
+
+  updateTagControlLabel();
 
   function togglePanel(open) {
     if (!filterPanel) return;

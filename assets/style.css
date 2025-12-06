@@ -203,42 +203,87 @@ body {
   align-items: stretch;
 }
 
-.tag-toggle-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 12px;
+.tag-select {
+  position: relative;
+  margin-bottom: 14px;
 }
 
-.tag-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 999px;
+.tag-select__control {
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   background: #fff;
-  color: var(--text);
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   cursor: pointer;
-  transition: all 0.15s ease;
-  font-size: 14px;
   box-shadow: 0 6px 15px rgba(15, 23, 42, 0.04);
 }
 
-.tag-toggle input {
-  display: none;
+.tag-select__control::after {
+  content: '\25BE';
+  color: var(--muted);
+  font-size: 12px;
 }
 
-.tag-toggle:hover {
+.tag-select__menu {
+  position: absolute;
+  z-index: 10;
+  inset: calc(100% + 6px) 0 auto 0;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
+  padding: 10px;
+}
+
+.tag-select__search input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.tag-select__options {
+  max-height: 220px;
+  overflow-y: auto;
+  margin-top: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.tag-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.tag-option input {
+  width: 16px;
+  height: 16px;
+}
+
+.tag-option:hover {
   border-color: var(--primary);
-  transform: translateY(-1px);
+  background: #f8fafc;
 }
 
-.tag-toggle.is-active {
+.tag-option.is-active {
+  border-color: rgba(67, 56, 202, 0.6);
   background: var(--tag-bg);
-  border-color: rgba(67, 56, 202, 0.4);
   color: var(--tag-text);
-  box-shadow: 0 2px 6px rgba(67, 56, 202, 0.16);
+  box-shadow: 0 2px 8px rgba(67, 56, 202, 0.12);
 }
 
 .search-form input[type="text"] {
