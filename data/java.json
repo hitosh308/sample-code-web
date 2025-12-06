@@ -1,0 +1,1011 @@
+[
+  {
+    "id": "java-1",
+    "title": "JSON文字列をJavaオブジェクトに変換（Jackson）",
+    "description": "Jacksonを用いてJSON文字列をDTOにマッピングするサンプルです。",
+    "language": "Java",
+    "code": "import com.fasterxml.jackson.databind.ObjectMapper;\n\nclass User {\n  public String name;\n  public int age;\n}\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    String json = \"{\\\"name\\\":\\\"Taro\\\",\\\"age\\\":20}\";\n    ObjectMapper mapper = new ObjectMapper();\n    User user = mapper.readValue(json, User.class);\n    System.out.println(user.name + \":\" + user.age);\n  }\n}\n",
+    "tags": ["java", "json", "jackson"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-2",
+    "title": "HTTP GETリクエスト（Java 11 HttpClient）",
+    "description": "標準HttpClientで外部APIへGETリクエストを送るサンプルです。",
+    "language": "Java",
+    "code": "import java.net.URI;\nimport java.net.http.HttpClient;\nimport java.net.http.HttpRequest;\nimport java.net.http.HttpResponse;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    HttpClient client = HttpClient.newHttpClient();\n    HttpRequest req = HttpRequest.newBuilder()\n        .uri(URI.create(\"https://api.github.com\"))\n        .GET()\n        .build();\n    HttpResponse<String> res = client.send(req, HttpResponse.BodyHandlers.ofString());\n    System.out.println(res.statusCode());\n    System.out.println(res.body());\n  }\n}\n",
+    "tags": ["java", "http", "api"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-3",
+    "title": "環境変数の取得とデフォルト値",
+    "description": "環境変数が未設定の場合にデフォルト値を採用する実用コードです。",
+    "language": "Java",
+    "code": "public class Main {\n  public static void main(String[] args) {\n    String url = System.getenv().getOrDefault(\"API_URL\", \"http://localhost:8080\");\n    String profile = System.getenv().getOrDefault(\"APP_PROFILE\", \"local\");\n    System.out.println(\"API_URL=\" + url);\n    System.out.println(\"APP_PROFILE=\" + profile);\n  }\n}\n",
+    "tags": ["java", "env", "config"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-4",
+    "title": "CSVファイルを読み込みリスト化",
+    "description": "シンプルなsplitベースでCSVを読み込むサンプルです（ヘッダあり想定）。",
+    "language": "Java",
+    "code": "import java.nio.file.*;\nimport java.util.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    List<String> lines = Files.readAllLines(Path.of(\"data.csv\"));\n    List<Map<String, String>> rows = new ArrayList<>();\n    String[] header = lines.get(0).split(\",\");\n    for (int i = 1; i < lines.size(); i++) {\n      String[] cols = lines.get(i).split(\",\");\n      Map<String, String> row = new LinkedHashMap<>();\n      for (int j = 0; j < header.length && j < cols.length; j++) {\n        row.put(header[j], cols[j]);\n      }\n      rows.add(row);\n    }\n    rows.forEach(System.out::println);\n  }\n}\n",
+    "tags": ["java", "csv", "file"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-5",
+    "title": "SLF4J + Logbackでログ出力",
+    "description": "System.outではなくロガーを使ってログを出力する基本形です。",
+    "language": "Java",
+    "code": "import org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\n\npublic class Main {\n  private static final Logger log = LoggerFactory.getLogger(Main.class);\n\n  public static void main(String[] args) {\n    log.info(\"start application\");\n    try {\n      int x = 1 / 0;\n    } catch (Exception e) {\n      log.error(\"error occurred\", e);\n    }\n    log.debug(\"end application\");\n  }\n}\n",
+    "tags": ["java", "logging", "slf4j"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-6",
+    "title": "簡易LRUキャッシュ（LinkedHashMap）",
+    "description": "LinkedHashMapを継承した最小限のLRUキャッシュ実装です。",
+    "language": "Java",
+    "code": "import java.util.*;\n\nclass LruCache<K, V> extends LinkedHashMap<K, V> {\n  private final int maxSize;\n  public LruCache(int maxSize) {\n    super(maxSize, 0.75f, true);\n    this.maxSize = maxSize;\n  }\n  @Override\n  protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {\n    return size() > maxSize;\n  }\n}\n\npublic class Main {\n  public static void main(String[] args) {\n    LruCache<Integer, String> cache = new LruCache<>(3);\n    cache.put(1, \"A\");\n    cache.put(2, \"B\");\n    cache.put(3, \"C\");\n    cache.get(1);\n    cache.put(4, \"D\"); // 2が削除される\n    System.out.println(cache);\n  }\n}\n",
+    "tags": ["java", "cache", "lru"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-7",
+    "title": "外部コマンド実行（ProcessBuilder）",
+    "description": "OSのコマンドを呼び出し標準出力を読むサンプルです。",
+    "language": "Java",
+    "code": "import java.io.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    ProcessBuilder pb = new ProcessBuilder(\"ls\", \"-la\"); // Windowsなら\"cmd\",\"/c\",\"dir\"\n    Process p = pb.start();\n    try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))) {\n      br.lines().forEach(System.out::println);\n    }\n    int exit = p.waitFor();\n    System.out.println(\"exit=\" + exit);\n  }\n}\n",
+    "tags": ["java", "process", "cli"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-8",
+    "title": "YAML設定ファイル読み込み（SnakeYAML）",
+    "description": "config.ymlを読み取りMapとして扱うサンプルです。",
+    "language": "Java",
+    "code": "import org.yaml.snakeyaml.Yaml;\nimport java.nio.file.*;\nimport java.util.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    String yamlText = Files.readString(Path.of(\"config.yml\"));\n    Yaml yaml = new Yaml();\n    Map<String, Object> config = yaml.load(yamlText);\n    System.out.println(config.get(\"app\"));\n  }\n}\n",
+    "tags": ["java", "yaml", "config"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-9",
+    "title": "リトライ処理（指数バックオフ）",
+    "description": "一時的な失敗時にリトライし、待機時間を指数的に増やす例です。",
+    "language": "Java",
+    "code": "public class Main {\n  public static void main(String[] args) throws Exception {\n    int maxRetry = 5;\n    long delay = 500L;\n    for (int i = 1; i <= maxRetry; i++) {\n      try {\n        callRemote();\n        System.out.println(\"success\");\n        break;\n      } catch (Exception e) {\n        System.out.println(\"failed \" + i + \" times: \" + e.getMessage());\n        if (i == maxRetry) throw e;\n        Thread.sleep(delay);\n        delay *= 2;\n      }\n    }\n  }\n\n  static void callRemote() {\n    throw new RuntimeException(\"temporary error\");\n  }\n}\n",
+    "tags": ["java", "retry", "backoff"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-10",
+    "title": "AES暗号化・復号のユーティリティ",
+    "description": "共通鍵AESで文字列を暗号化・復号する簡易ユーティリティです。",
+    "language": "Java",
+    "code": "import javax.crypto.Cipher;\nimport javax.crypto.spec.SecretKeySpec;\nimport java.util.Base64;\n\npublic class Main {\n  private static final String KEY = \"0123456789abcdef\"; // 16byteデモ用\n\n  public static void main(String[] args) throws Exception {\n    String enc = encrypt(\"hello\");\n    String dec = decrypt(enc);\n    System.out.println(enc + \" -> \" + dec);\n  }\n\n  static String encrypt(String plain) throws Exception {\n    Cipher c = Cipher.getInstance(\"AES\");\n    c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(KEY.getBytes(), \"AES\"));\n    byte[] out = c.doFinal(plain.getBytes());\n    return Base64.getEncoder().encodeToString(out);\n  }\n\n  static String decrypt(String enc) throws Exception {\n    Cipher c = Cipher.getInstance(\"AES\");\n    c.init(Cipher.DECRYPT_MODE, new SecretKeySpec(KEY.getBytes(), \"AES\"));\n    byte[] in = Base64.getDecoder().decode(enc);\n    return new String(c.doFinal(in));\n  }\n}\n",
+    "tags": ["java", "aes", "crypto"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+
+  {
+    "id": "java-11",
+    "title": "JWTトークンの生成と検証（jjwt）",
+    "description": "io.jsonwebtokenライブラリを使ったシンプルなJWTハンドリング例です。",
+    "language": "Java",
+    "code": "import io.jsonwebtoken.*;\nimport io.jsonwebtoken.security.Keys;\nimport java.security.Key;\nimport java.util.Date;\n\npublic class Main {\n  public static void main(String[] args) {\n    Key key = Keys.hmacShaKeyFor(\"0123456789abcdef0123456789abcdef\".getBytes());\n    String jwt = Jwts.builder()\n        .setSubject(\"user1\")\n        .setExpiration(new Date(System.currentTimeMillis() + 3600_000))\n        .signWith(key)\n        .compact();\n    System.out.println(jwt);\n\n    Jws<Claims> parsed = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(jwt);\n    System.out.println(parsed.getBody().getSubject());\n  }\n}\n",
+    "tags": ["java", "jwt", "security"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-12",
+    "title": "JDBCでSELECT実行（PreparedStatement）",
+    "description": "プレースホルダ付きSQLでDBからレコードを取得するサンプルです。",
+    "language": "Java",
+    "code": "import java.sql.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    String url = \"jdbc:postgresql://localhost:5432/app\";\n    String user = \"app\";\n    String pass = \"pass\";\n    try (Connection con = DriverManager.getConnection(url, user, pass);\n         PreparedStatement ps = con.prepareStatement(\"SELECT id, name FROM users WHERE active = ?\")) {\n      ps.setBoolean(1, true);\n      try (ResultSet rs = ps.executeQuery()) {\n        while (rs.next()) {\n          System.out.println(rs.getLong(\"id\") + \":\" + rs.getString(\"name\"));\n        }\n      }\n    }\n  }\n}\n",
+    "tags": ["java", "jdbc", "db"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-13",
+    "title": "HikariCPによるConnection Pool設定",
+    "description": "HikariCPを使ってDataSourceを用意する最小構成の例です。",
+    "language": "Java",
+    "code": "import com.zaxxer.hikari.HikariConfig;\nimport com.zaxxer.hikari.HikariDataSource;\nimport javax.sql.DataSource;\n\npublic class DbPoolFactory {\n  public static DataSource create() {\n    HikariConfig cfg = new HikariConfig();\n    cfg.setJdbcUrl(\"jdbc:postgresql://localhost:5432/app\");\n    cfg.setUsername(\"app\");\n    cfg.setPassword(\"pass\");\n    cfg.setMaximumPoolSize(10);\n    return new HikariDataSource(cfg);\n  }\n}\n",
+    "tags": ["java", "hikaricp", "db"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-14",
+    "title": "クエリパラメータ付きURLの組み立て",
+    "description": "URLEncoderを使って安全にクエリパラメータを構築する例です。",
+    "language": "Java",
+    "code": "import java.net.URLEncoder;\nimport java.nio.charset.StandardCharsets;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    String base = \"https://example.com/search\";\n    String q = URLEncoder.encode(\"日本語 テスト\", StandardCharsets.UTF_8);\n    String url = base + \"?q=\" + q + \"&limit=10\";\n    System.out.println(url);\n  }\n}\n",
+    "tags": ["java", "url", "encode"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-15",
+    "title": "ディレクトリ以下の特定拡張子ファイル検索",
+    "description": "Files.walkを使用して*.logファイルを再帰的に列挙します。",
+    "language": "Java",
+    "code": "import java.nio.file.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    Path root = Path.of(\".\");\n    try (var s = Files.walk(root)) {\n      s.filter(p -> p.toString().endsWith(\".log\"))\n       .forEach(System.out::println);\n    }\n  }\n}\n",
+    "tags": ["java", "files", "walk"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-16",
+    "title": "ディレクトリをZIP圧縮する",
+    "description": "指定ディレクトリ配下をZIPに固めるシンプルなコードです。",
+    "language": "Java",
+    "code": "import java.io.*;\nimport java.nio.file.*;\nimport java.util.zip.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    Path src = Path.of(\"logs\");\n    Path zip = Path.of(\"logs.zip\");\n    try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zip))) {\n      Files.walk(src).filter(Files::isRegularFile).forEach(p -> {\n        ZipEntry e = new ZipEntry(src.relativize(p).toString());\n        try {\n          zos.putNextEntry(e);\n          Files.copy(p, zos);\n          zos.closeEntry();\n        } catch (IOException ex) {\n          throw new UncheckedIOException(ex);\n        }\n      });\n    }\n  }\n}\n",
+    "tags": ["java", "zip", "file"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-17",
+    "title": "ZIPファイルを解凍する",
+    "description": "ZipInputStreamでZIPを展開するサンプルです。",
+    "language": "Java",
+    "code": "import java.io.*;\nimport java.nio.file.*;\nimport java.util.zip.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    Path zip = Path.of(\"logs.zip\");\n    Path outDir = Path.of(\"logs_unzip\");\n    Files.createDirectories(outDir);\n    try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zip))) {\n      ZipEntry e;\n      while ((e = zis.getNextEntry()) != null) {\n        Path out = outDir.resolve(e.getName());\n        Files.createDirectories(out.getParent());\n        Files.copy(zis, out, StandardCopyOption.REPLACE_EXISTING);\n        zis.closeEntry();\n      }\n    }\n  }\n}\n",
+    "tags": ["java", "zip", "unzip"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-18",
+    "title": "Excelファイル読み込み（Apache POI）",
+    "description": "最初のシートと行列を走査して内容を表示する例です。",
+    "language": "Java",
+    "code": "import org.apache.poi.ss.usermodel.*;\nimport java.io.FileInputStream;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    try (FileInputStream in = new FileInputStream(\"sample.xlsx\");\n         Workbook wb = WorkbookFactory.create(in)) {\n      Sheet sheet = wb.getSheetAt(0);\n      for (Row row : sheet) {\n        for (Cell cell : row) {\n          System.out.print(cell.toString() + \"\\t\");\n        }\n        System.out.println();\n      }\n    }\n  }\n}\n",
+    "tags": ["java", "excel", "poi"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-19",
+    "title": "Excelファイル書き込み（Apache POI）",
+    "description": "メモリ上でExcelを作成しファイル出力する例です。",
+    "language": "Java",
+    "code": "import org.apache.poi.ss.usermodel.*;\nimport org.apache.poi.xssf.usermodel.XSSFWorkbook;\nimport java.io.FileOutputStream;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    try (Workbook wb = new XSSFWorkbook()) {\n      Sheet sheet = wb.createSheet(\"users\");\n      Row header = sheet.createRow(0);\n      header.createCell(0).setCellValue(\"id\");\n      header.createCell(1).setCellValue(\"name\");\n      Row row1 = sheet.createRow(1);\n      row1.createCell(0).setCellValue(1);\n      row1.createCell(1).setCellValue(\"Taro\");\n      try (FileOutputStream out = new FileOutputStream(\"users.xlsx\")) {\n        wb.write(out);\n      }\n    }\n  }\n}\n",
+    "tags": ["java", "excel", "poi"],
+    "created_at": "2025-12-06 10:00:00",
+    updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-20",
+    "title": "ログ用に機密情報をマスクするユーティリティ",
+    "description": "クレジットカード番号などをマスクしてログに出すための簡易関数です。",
+    "language": "Java",
+    "code": "public class MaskUtil {\n  public static String maskCard(String card) {\n    if (card == null || card.length() < 8) return \"****\";\n    String head = card.substring(0, 4);\n    String tail = card.substring(card.length() - 4);\n    return head + \"****\" + tail;\n  }\n\n  public static void main(String[] args) {\n    System.out.println(maskCard(\"1234567890123456\"));\n  }\n}\n",
+    "tags": ["java", "mask", "logging"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+
+  {
+    "id": "java-21",
+    "title": "Bean Validationで入力チェック（Hibernate Validator）",
+    "description": "アノテーションでDTOの検証を行うサンプルです。",
+    "language": "Java",
+    "code": "import jakarta.validation.*;\nimport jakarta.validation.constraints.*;\nimport java.util.Set;\n\nclass SignUpForm {\n  @NotBlank\n  public String name;\n  @Email\n  public String email;\n}\n\npublic class Main {\n  public static void main(String[] args) {\n    Validator v = Validation.buildDefaultValidatorFactory().getValidator();\n    SignUpForm f = new SignUpForm();\n    f.name = \"\";\n    f.email = \"invalid\";\n    Set<ConstraintViolation<SignUpForm>> errors = v.validate(f);\n    errors.forEach(e -> System.out.println(e.getPropertyPath() + \":\" + e.getMessage()));\n  }\n}\n",
+    "tags": ["java", "validation", "bean-validation"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-22",
+    "title": "DTOとエンティティのマッピング（手書きMapper）",
+    "description": "MapStruct風にMapperクラスを分離する小さな例です。",
+    "language": "Java",
+    "code": "class UserEntity {\n  Long id;\n  String name;\n}\n\nclass UserDto {\n  Long id;\n  String name;\n}\n\nclass UserMapper {\n  static UserDto toDto(UserEntity e) {\n    UserDto d = new UserDto();\n    d.id = e.id;\n    d.name = e.name;\n    return d;\n  }\n}\n",
+    "tags": ["java", "mapper", "dto"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-23",
+    "title": "ScheduledExecutorServiceで定期実行",
+    "description": "5秒ごとにタスクを実行するシンプルなスケジューラです。",
+    "language": "Java",
+    "code": "import java.util.concurrent.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor();\n    es.scheduleAtFixedRate(() -> System.out.println(\"tick\"), 0, 5, TimeUnit.SECONDS);\n  }\n}\n",
+    "tags": ["java", "scheduler", "executor"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-24",
+    "title": "未処理例外のグローバルハンドリング",
+    "description": "Thread.setDefaultUncaughtExceptionHandlerの利用例です。",
+    "language": "Java",
+    "code": "public class Main {\n  public static void main(String[] args) {\n    Thread.setDefaultUncaughtExceptionHandler((t, e) -> {\n      System.err.println(\"uncaught in \" + t.getName() + \": \" + e.getMessage());\n    });\n    throw new RuntimeException(\"boom\");\n  }\n}\n",
+    "tags": ["java", "exception", "global"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-25",
+    "title": "シャットダウンフックで終了処理",
+    "description": "アプリ終了時にリソース解放やログ出力を行う例です。",
+    "language": "Java",
+    "code": "public class Main {\n  public static void main(String[] args) throws Exception {\n    Runtime.getRuntime().addShutdownHook(new Thread(() -> {\n      System.out.println(\"cleanup before exit\");\n    }));\n    System.out.println(\"running...\");\n    Thread.sleep(10000);\n  }\n}\n",
+    "tags": ["java", "shutdown-hook", "lifecycle"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-26",
+    "title": "シンプルなコマンドライン引数パーサ",
+    "description": "--key=value 形式の引数をMapに変換します。",
+    "language": "Java",
+    "code": "import java.util.*;\n\npublic class CliArgs {\n  public static Map<String, String> parse(String[] args) {\n    Map<String, String> map = new HashMap<>();\n    for (String a : args) {\n      if (a.startsWith(\"--\")) {\n        String[] kv = a.substring(2).split(\"=\", 2);\n        map.put(kv[0], kv.length > 1 ? kv[1] : \"true\");\n      }\n    }\n    return map;\n  }\n}\n",
+    "tags": ["java", "cli", "args"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-27",
+    "title": "実行時間計測用AutoCloseableタイマー",
+    "description": "try-with-resourcesで処理時間をログ出力するユーティリティです。",
+    "language": "Java",
+    "code": "public class Timer implements AutoCloseable {\n  private final long start = System.currentTimeMillis();\n  private final String label;\n  public Timer(String label) { this.label = label; }\n  @Override\n  public void close() {\n    long ms = System.currentTimeMillis() - start;\n    System.out.println(label + \" took \" + ms + \"ms\");\n  }\n\n  public static void main(String[] args) throws Exception {\n    try (Timer t = new Timer(\"job\")) {\n      Thread.sleep(500);\n    }\n  }\n}\n",
+    "tags": ["java", "timer", "utility"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-28",
+    "title": "AtomicLongでスレッドセーフなID採番",
+    "description": "アプリ内で一意な連番IDを発行するサンプルです。",
+    "language": "Java",
+    "code": "import java.util.concurrent.atomic.AtomicLong;\n\npublic class IdGenerator {\n  private static final AtomicLong seq = new AtomicLong(1);\n  public static long nextId() { return seq.getAndIncrement(); }\n\n  public static void main(String[] args) {\n    System.out.println(nextId());\n    System.out.println(nextId());\n  }\n}\n",
+    "tags": ["java", "id", "atomic"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-29",
+    "title": "WatchServiceでファイル変更監視",
+    "description": "ディレクトリの作成・更新・削除を監視するサンプルです。",
+    "language": "Java",
+    "code": "import java.nio.file.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    WatchService ws = FileSystems.getDefault().newWatchService();\n    Path dir = Path.of(\"./watched\");\n    dir.register(ws, StandardWatchEventKinds.ENTRY_CREATE,\n        StandardWatchEventKinds.ENTRY_MODIFY,\n        StandardWatchEventKinds.ENTRY_DELETE);\n    while (true) {\n      WatchKey key = ws.take();\n      for (WatchEvent<?> e : key.pollEvents()) {\n        System.out.println(e.kind() + \": \" + e.context());\n      }\n      key.reset();\n    }\n  }\n}\n",
+    "tags": ["java", "watchservice", "file"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-30",
+    "title": "HttpServerで超簡易HTTPサーバ",
+    "description": "JDKのcom.sun.net.httpserverを使ったミニWebサーバです。",
+    "language": "Java",
+    "code": "import com.sun.net.httpserver.*;\nimport java.io.IOException;\nimport java.io.OutputStream;\nimport java.net.InetSocketAddress;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);\n    server.createContext(\"/hello\", exchange -> {\n      byte[] body = \"hello\".getBytes();\n      exchange.sendResponseHeaders(200, body.length);\n      try (OutputStream os = exchange.getResponseBody()) {\n        os.write(body);\n      }\n    });\n    server.start();\n  }\n}\n",
+    "tags": ["java", "httpserver", "mini-web"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+
+  {
+    "id": "java-31",
+    "title": "HMAC-SHA256で署名生成",
+    "description": "Webhookのシグネチャ検証などに使えるHMACユーティリティです。",
+    "language": "Java",
+    "code": "import javax.crypto.Mac;\nimport javax.crypto.spec.SecretKeySpec;\nimport java.util.Base64;\n\npublic class HmacUtil {\n  public static String hmacSha256(String secret, String msg) throws Exception {\n    Mac mac = Mac.getInstance(\"HmacSHA256\");\n    mac.init(new SecretKeySpec(secret.getBytes(), \"HmacSHA256\"));\n    byte[] raw = mac.doFinal(msg.getBytes());\n    return Base64.getEncoder().encodeToString(raw);\n  }\n}\n",
+    "tags": ["java", "hmac", "security"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-32",
+    "title": "スラッグ生成（URLセーフな文字列）",
+    "description": "タイトルなどからURL用のスラッグを生成します。",
+    "language": "Java",
+    "code": "public class Slug {\n  public static String slugify(String s) {\n    String normalized = s.toLowerCase().replaceAll(\"[^a-z0-9]+\", \"-\");\n    return normalized.replaceAll(\"^-+|-+$\", \"\");\n  }\n\n  public static void main(String[] args) {\n    System.out.println(slugify(\"Hello World!! 2024\"));\n  }\n}\n",
+    "tags": ["java", "string", "slug"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-33",
+    "title": "CSV→JSON変換",
+    "description": "ヘッダ付きCSVを読み込みJSON配列文字列に変換します。",
+    "language": "Java",
+    "code": "import java.nio.file.*;\nimport java.util.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    List<String> lines = Files.readAllLines(Path.of(\"data.csv\"));\n    String[] header = lines.get(0).split(\",\");\n    StringBuilder sb = new StringBuilder(\"[\");\n    for (int i = 1; i < lines.size(); i++) {\n      if (i > 1) sb.append(',');\n      String[] cols = lines.get(i).split(\",\");\n      sb.append('{');\n      for (int j = 0; j < header.length; j++) {\n        if (j > 0) sb.append(',');\n        sb.append('\"').append(header[j]).append('\"').append(':')\n          .append('\"').append(cols[j]).append('\"');\n      }\n      sb.append('}');\n    }\n    sb.append(']');\n    System.out.println(sb);\n  }\n}\n",
+    "tags": ["java", "csv", "json"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-34",
+    "title": "日本語ソート（Collator利用）",
+    "description": "日本語文字列をロケールに沿ってソートする例です。",
+    "language": "Java",
+    "code": "import java.text.Collator;\nimport java.util.*;\n\npublic class Main {\n  public static void main(String[] args) {\n    List<String> list = Arrays.asList(\"あい\", \"あお\", \"あか\");\n    Collator collator = Collator.getInstance(Locale.JAPAN);\n    list.sort(collator);\n    System.out.println(list);\n  }\n}\n",
+    "tags": ["java", "collator", "i18n"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-35",
+    "title": "ResourceBundleでメッセージ多言語化",
+    "description": "messages_ja.properties等からメッセージを取得する例です。",
+    "language": "Java",
+    "code": "import java.util.*;\n\npublic class Main {\n  public static void main(String[] args) {\n    ResourceBundle bundle = ResourceBundle.getBundle(\"messages\", Locale.JAPAN);\n    System.out.println(bundle.getString(\"hello\"));\n  }\n}\n",
+    "tags": ["java", "i18n", "resourcebundle"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-36",
+    "title": "簡易レートリミッタ（トークンバケット）",
+    "description": "一定時間内の呼び出し回数を制限するシンプルな実装です。",
+    "language": "Java",
+    "code": "public class RateLimiter {\n  private final int max;\n  private final long windowMs;\n  private int count;\n  private long windowStart;\n\n  public RateLimiter(int max, long windowMs) {\n    this.max = max;\n    this.windowMs = windowMs;\n    this.windowStart = System.currentTimeMillis();\n  }\n\n  public synchronized boolean tryAcquire() {\n    long now = System.currentTimeMillis();\n    if (now - windowStart > windowMs) {\n      windowStart = now;\n      count = 0;\n    }\n    if (count < max) {\n      count++;\n      return true;\n    }\n    return false;\n  }\n}\n",
+    "tags": ["java", "ratelimit", "utility"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-37",
+    "title": "簡易イベントバス（リスナー登録）",
+    "description": "リスナーを登録してイベントを配信するシンプルな実装です。",
+    "language": "Java",
+    "code": "import java.util.*;\n\ninterface EventListener {\n  void onEvent(String name, Object data);\n}\n\npublic class EventBus {\n  private final List<EventListener> listeners = new ArrayList<>();\n  public void register(EventListener l) { listeners.add(l); }\n  public void publish(String name, Object data) {\n    listeners.forEach(l -> l.onEvent(name, data));\n  }\n}\n",
+    "tags": ["java", "event", "observer"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-38",
+    "title": "状態遷移をenumで管理するミニステートマシン",
+    "description": "状態とイベントに応じて次の状態を決める簡単な例です。",
+    "language": "Java",
+    "code": "enum OrderState {\n  NEW, PAID, SHIPPED;\n  public OrderState pay() { return this == NEW ? PAID : this; }\n  public OrderState ship() { return this == PAID ? SHIPPED : this; }\n}\n",
+    "tags": ["java", "state-machine", "enum"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-39",
+    "title": "Either風Result型でエラーと成功を表現",
+    "description": "右が成功、左がエラーを表す簡易クラスです。",
+    "language": "Java",
+    "code": "public class Result<L, R> {\n  private final L left;\n  private final R right;\n  private Result(L left, R right) { this.left = left; this.right = right; }\n  public static <L, R> Result<L, R> ok(R r) { return new Result<>(null, r); }\n  public static <L, R> Result<L, R> err(L l) { return new Result<>(l, null); }\n  public boolean isOk() { return right != null; }\n  public R get() { return right; }\n  public L getError() { return left; }\n}\n",
+    "tags": ["java", "result", "either"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-40",
+    "title": "JacksonでJSONを整形出力（pretty print）",
+    "description": "ObjectMapperのwriterWithDefaultPrettyPrinterで整形します。",
+    "language": "Java",
+    "code": "import com.fasterxml.jackson.databind.ObjectMapper;\nimport java.util.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    Map<String, Object> map = Map.of(\"name\", \"Taro\", \"age\", 20);\n    ObjectMapper mapper = new ObjectMapper();\n    String pretty = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);\n    System.out.println(pretty);\n  }\n}\n",
+    "tags": ["java", "json", "pretty-print"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+
+  {
+    "id": "java-41",
+    "title": "HTTP POSTでJSON送信",
+    "description": "HttpClientを使ってJSONボディをPOSTする例です。",
+    "language": "Java",
+    "code": "import java.net.URI;\nimport java.net.http.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    HttpClient client = HttpClient.newHttpClient();\n    String json = \"{\\\"name\\\":\\\"Taro\\\"}\";\n    HttpRequest req = HttpRequest.newBuilder(URI.create(\"https://httpbin.org/post\"))\n        .header(\"Content-Type\", \"application/json\")\n        .POST(HttpRequest.BodyPublishers.ofString(json))\n        .build();\n    HttpResponse<String> res = client.send(req, HttpResponse.BodyHandlers.ofString());\n    System.out.println(res.body());\n  }\n}\n",
+    "tags": ["java", "http", "post"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-42",
+    "title": "HTTPでファイルダウンロード",
+    "description": "大きなファイルもストリームで保存するサンプルです。",
+    "language": "Java",
+    "code": "import java.net.URI;\nimport java.net.http.*;\nimport java.nio.file.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    HttpClient client = HttpClient.newHttpClient();\n    HttpRequest req = HttpRequest.newBuilder(URI.create(\"https://example.com/file.zip\")).build();\n    HttpResponse<Path> res = client.send(req, HttpResponse.BodyHandlers.ofFile(Path.of(\"file.zip\")));\n    System.out.println(\"saved: \" + res.body());\n  }\n}\n",
+    "tags": ["java", "http", "download"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-43",
+    "title": "SHA-256ハッシュの生成",
+    "description": "文字列からSHA-256ダイジェストを生成するユーティリティです。",
+    "language": "Java",
+    "code": "import java.security.MessageDigest;\n\npublic class HashUtil {\n  public static String sha256(String s) throws Exception {\n    MessageDigest md = MessageDigest.getInstance(\"SHA-256\");\n    byte[] hash = md.digest(s.getBytes());\n    StringBuilder sb = new StringBuilder();\n    for (byte b : hash) sb.append(String.format(\"%02x\", b));\n    return sb.toString();\n  }\n}\n",
+    "tags": ["java", "hash", "sha256"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-44",
+    "title": "PBKDF2によるパスワードハッシュ",
+    "description": "セキュアなパスワード保存用のハッシュを生成する例です。",
+    "language": "Java",
+    "code": "import javax.crypto.SecretKeyFactory;\nimport javax.crypto.spec.PBEKeySpec;\nimport java.security.SecureRandom;\nimport java.util.Base64;\n\npublic class PasswordUtil {\n  public static String hashPassword(String pw) throws Exception {\n    byte[] salt = new byte[16];\n    new SecureRandom().nextBytes(salt);\n    PBEKeySpec spec = new PBEKeySpec(pw.toCharArray(), salt, 65536, 256);\n    SecretKeyFactory skf = SecretKeyFactory.getInstance(\"PBKDF2WithHmacSHA256\");\n    byte[] hash = skf.generateSecret(spec).getEncoded();\n    return Base64.getEncoder().encodeToString(salt) + \":\" + Base64.getEncoder().encodeToString(hash);\n  }\n}\n",
+    "tags": ["java", "password", "pbkdf2"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-45",
+    "title": "セキュアなランダムトークン生成",
+    "description": "URLセーフなランダムトークンを生成するユーティリティです。",
+    "language": "Java",
+    "code": "import java.security.SecureRandom;\nimport java.util.Base64;\n\npublic class TokenGenerator {\n  private static final SecureRandom rnd = new SecureRandom();\n  public static String generate(int bytes) {\n    byte[] buf = new byte[bytes];\n    rnd.nextBytes(buf);\n    return Base64.getUrlEncoder().withoutPadding().encodeToString(buf);\n  }\n}\n",
+    "tags": ["java", "token", "secure-random"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-46",
+    "title": "クラスパスからリソース読み込み",
+    "description": "getResourceAsStreamでJar内部のファイルを読む例です。",
+    "language": "Java",
+    "code": "import java.io.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    try (InputStream in = Main.class.getResourceAsStream(\"/data/config.json\")) {\n      if (in == null) throw new FileNotFoundException();\n      String text = new String(in.readAllBytes());\n      System.out.println(text);\n    }\n  }\n}\n",
+    "tags": ["java", "resource", "classpath"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-47",
+    "title": "OpenCSVでCSVパース",
+    "description": "ライブラリを使ってCSVを安全にパースするサンプルです。",
+    "language": "Java",
+    "code": "import com.opencsv.CSVReader;\nimport java.io.FileReader;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    try (CSVReader r = new CSVReader(new FileReader(\"data.csv\"))) {\n      r.readAll().forEach(row -> System.out.println(String.join(\" | \", row)));\n    }\n  }\n}\n",
+    "tags": ["java", "csv", "opencsv"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-48",
+    "title": "Mapからクエリストリング生成",
+    "description": "Map<String,String>をURLパラメータに変換します。",
+    "language": "Java",
+    "code": "import java.net.URLEncoder;\nimport java.nio.charset.StandardCharsets;\nimport java.util.*;\n\npublic class QueryUtil {\n  public static String toQuery(Map<String,String> params) {\n    StringBuilder sb = new StringBuilder();\n    for (var e : params.entrySet()) {\n      if (sb.length() > 0) sb.append('&');\n      sb.append(URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8));\n      sb.append('=');\n      sb.append(URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8));\n    }\n    return sb.toString();\n  }\n}\n",
+    "tags": ["java", "url", "query"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-49",
+    "title": "JSoupでHTMLスクレイピング",
+    "description": "タイトルとaタグを抽出する最小限のサンプルです。",
+    "language": "Java",
+    "code": "import org.jsoup.Jsoup;\nimport org.jsoup.nodes.Document;\nimport org.jsoup.nodes.Element;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    Document doc = Jsoup.connect(\"https://example.com\").get();\n    System.out.println(doc.title());\n    for (Element a : doc.select(\"a\")) {\n      System.out.println(a.text() + \" -> \" + a.attr(\"href\"));\n    }\n  }\n}\n",
+    "tags": ["java", "jsoup", "scraping"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-50",
+    "title": "JavaMailでメール送信",
+    "description": "SMTPを使ってシンプルなテキストメールを送信します。",
+    "language": "Java",
+    "code": "import jakarta.mail.*;\nimport jakarta.mail.internet.*;\nimport java.util.Properties;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    Properties props = new Properties();\n    props.put(\"mail.smtp.host\", \"localhost\");\n    Session session = Session.getInstance(props);\n    Message msg = new MimeMessage(session);\n    msg.setFrom(new InternetAddress(\"from@example.com\"));\n    msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(\"to@example.com\"));\n    msg.setSubject(\"test\");\n    msg.setText(\"hello\");\n    Transport.send(msg);\n  }\n}\n",
+    "tags": ["java", "mail", "smtp"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+
+  {
+    "id": "java-51",
+    "title": "Java 8 Streamでグルーピング＋集計",
+    "description": "商品リストをカテゴリごとに集計する例です。",
+    "language": "Java",
+    "code": "import java.util.*;\nimport java.util.stream.*;\n\nclass Item { String category; int price; }\n\npublic class Main {\n  public static void main(String[] args) {\n    List<Item> list = new ArrayList<>();\n    Map<String, Integer> sum = list.stream()\n        .collect(Collectors.groupingBy(i -> i.category, Collectors.summingInt(i -> i.price)));\n    System.out.println(sum);\n  }\n}\n",
+    "tags": ["java", "stream", "grouping"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-52",
+    "title": "CompletableFutureで並列処理を待ち合わせ",
+    "description": "複数の非同期処理をallOfで待ち合わせる例です。",
+    "language": "Java",
+    "code": "import java.util.concurrent.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    CompletableFuture<String> f1 = CompletableFuture.supplyAsync(() -> \"A\");\n    CompletableFuture<String> f2 = CompletableFuture.supplyAsync(() -> \"B\");\n    CompletableFuture<Void> all = CompletableFuture.allOf(f1, f2);\n    all.join();\n    System.out.println(f1.get() + f2.get());\n  }\n}\n",
+    "tags": ["java", "completablefuture", "async"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-53",
+    "title": "Semaphoreで同時実行数を制限",
+    "description": "同時に実行できるタスク数を制限する例です。",
+    "language": "Java",
+    "code": "import java.util.concurrent.*;\n\npublic class Main {\n  public static void main(String[] args) {\n    Semaphore sem = new Semaphore(3);\n    ExecutorService es = Executors.newFixedThreadPool(10);\n    Runnable task = () -> {\n      try {\n        sem.acquire();\n        System.out.println(\"run \" + Thread.currentThread().getName());\n        Thread.sleep(1000);\n      } catch (Exception ignored) {} finally {\n        sem.release();\n      }\n    };\n    for (int i = 0; i < 10; i++) es.submit(task);\n  }\n}\n",
+    "tags": ["java", "semaphore", "concurrency"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-54",
+    "title": "BlockingQueueでキューコンシューマ",
+    "description": "生産者・消費者パターンの最小実装です。",
+    "language": "Java",
+    "code": "import java.util.concurrent.*;\n\npublic class Main {\n  public static void main(String[] args) {\n    BlockingQueue<String> q = new LinkedBlockingQueue<>();\n    new Thread(() -> {\n      try {\n        while (true) {\n          String s = q.take();\n          System.out.println(\"consume: \" + s);\n        }\n      } catch (InterruptedException ignored) {}\n    }).start();\n\n    q.add(\"A\");\n    q.add(\"B\");\n  }\n}\n",
+    "tags": ["java", "blockingqueue", "producer-consumer"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-55",
+    "title": "Runtimeからメモリ使用量を取得",
+    "description": "簡易的なメモリ使用状況のログ出力です。",
+    "language": "Java",
+    "code": "public class Main {\n  public static void main(String[] args) {\n    Runtime rt = Runtime.getRuntime();\n    long used = rt.totalMemory() - rt.freeMemory();\n    System.out.println(\"used MB = \" + used / 1024 / 1024);\n  }\n}\n",
+    "tags": ["java", "memory", "runtime"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-56",
+    "title": "シンプルなテーブル形式のコンソール出力",
+    "description": "カラム幅を揃えて見やすく表示する例です。",
+    "language": "Java",
+    "code": "public class Main {\n  public static void main(String[] args) {\n    String format = \"%-10s | %-5s\\n\";\n    System.out.printf(format, \"name\", \"age\");\n    System.out.println(\"------------+------\");\n    System.out.printf(format, \"taro\", 20);\n    System.out.printf(format, \"hanako\", 25);\n  }\n}\n",
+    "tags": ["java", "console", "table"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-57",
+    "title": "InetAddressでDNSルックアップ",
+    "description": "ホスト名からIPアドレスを取得するサンプルです。",
+    "language": "Java",
+    "code": "import java.net.InetAddress;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    InetAddress addr = InetAddress.getByName(\"example.com\");\n    System.out.println(addr.getHostAddress());\n  }\n}\n",
+    "tags": ["java", "dns", "inetaddress"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-58",
+    "title": "isReachableで簡易Ping",
+    "description": "ICMPではないが到達確認として使える例です。",
+    "language": "Java",
+    "code": "import java.net.InetAddress;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    InetAddress addr = InetAddress.getByName(\"8.8.8.8\");\n    System.out.println(addr.isReachable(3000));\n  }\n}\n",
+    "tags": ["java", "ping", "network"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-59",
+    "title": "UUIDで一意ID生成",
+    "description": "ランダムUUIDを生成するだけの定番ユーティリティです。",
+    "language": "Java",
+    "code": "import java.util.UUID;\n\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(UUID.randomUUID());\n  }\n}\n",
+    "tags": ["java", "uuid", "id"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-60",
+    "title": "SLF4J MDCでトレースIDログ出力",
+    "description": "各スレッドごとにトレースIDをログに載せる例です。",
+    "language": "Java",
+    "code": "import org.slf4j.*;\n\npublic class Main {\n  private static final Logger log = LoggerFactory.getLogger(Main.class);\n  public static void main(String[] args) {\n    MDC.put(\"traceId\", \"abc-123\");\n    log.info(\"hello\");\n    MDC.clear();\n  }\n}\n",
+    "tags": ["java", "mdc", "logging"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+
+  {
+    "id": "java-61",
+    "title": "RESTレスポンス用共通ラッパー",
+    "description": "dataとerrorを持つ汎用レスポンスDTOです。",
+    "language": "Java",
+    "code": "public class ApiResponse<T> {\n  public boolean success;\n  public T data;\n  public String error;\n  public static <T> ApiResponse<T> ok(T data) {\n    ApiResponse<T> r = new ApiResponse<>();\n    r.success = true; r.data = data; return r;\n  }\n  public static <T> ApiResponse<T> fail(String msg) {\n    ApiResponse<T> r = new ApiResponse<>();\n    r.success = false; r.error = msg; return r;\n  }\n}\n",
+    "tags": ["java", "api", "response"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-62",
+    "title": "Propertiesファイルから設定読み込み",
+    "description": "application.propertiesを読み込みMap的に扱う例です。",
+    "language": "Java",
+    "code": "import java.io.FileInputStream;\nimport java.util.Properties;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    Properties p = new Properties();\n    try (FileInputStream in = new FileInputStream(\"application.properties\")) {\n      p.load(in);\n    }\n    System.out.println(p.getProperty(\"app.name\"));\n  }\n}\n",
+    "tags": ["java", "properties", "config"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-63",
+    "title": "シンプルなプログレスバー表示",
+    "description": "コンソール上で進捗を%表示する例です。",
+    "language": "Java",
+    "code": "public class Main {\n  public static void main(String[] args) throws Exception {\n    int total = 100;\n    for (int i = 0; i <= total; i++) {\n      int width = 50;\n      int filled = i * width / total;\n      String bar = \"#\".repeat(filled) + \"-\".repeat(width - filled);\n      System.out.printf(\"\\r[%s] %3d%%\", bar, i);\n      Thread.sleep(50);\n    }\n    System.out.println();\n  }\n}\n",
+    "tags": ["java", "progress", "console"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-64",
+    "title": "Spring Bootの簡易RESTコントローラ",
+    "description": "GET /hello に対して\"hello\"を返すだけの例です。",
+    "language": "Java",
+    "code": "import org.springframework.boot.*;\nimport org.springframework.boot.autoconfigure.*;\nimport org.springframework.web.bind.annotation.*;\n\n@SpringBootApplication\n@RestController\npublic class DemoApp {\n  @GetMapping(\"/hello\")\n  public String hello() { return \"hello\"; }\n\n  public static void main(String[] args) {\n    SpringApplication.run(DemoApp.class, args);\n  }\n}\n",
+    "tags": ["java", "spring-boot", "rest"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-65",
+    "title": "Spring Bootの@ConfigurationProperties",
+    "description": "app.nameなどをクラスにバインドするサンプルです。",
+    "language": "Java",
+    "code": "import org.springframework.boot.context.properties.ConfigurationProperties;\nimport org.springframework.stereotype.Component;\n\n@Component\n@ConfigurationProperties(prefix = \"app\")\npublic class AppProps {\n  private String name;\n  public String getName() { return name; }\n  public void setName(String name) { this.name = name; }\n}\n",
+    "tags": ["java", "spring-boot", "config"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-66",
+    "title": "@Scheduledで定期バッチ（Spring）",
+    "description": "1分ごとにバッチ処理を行うスケジューラです。",
+    "language": "Java",
+    "code": "import org.springframework.scheduling.annotation.Scheduled;\nimport org.springframework.stereotype.Component;\n\n@Component\npublic class BatchTask {\n  @Scheduled(fixedDelay = 60_000)\n  public void run() {\n    System.out.println(\"batch run\");\n  }\n}\n",
+    "tags": ["java", "spring", "scheduled"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-67",
+    "title": "JPAエンティティ定義の基本",
+    "description": "usersテーブルに対応するUserEntityの雛形です。",
+    "language": "Java",
+    "code": "import jakarta.persistence.*;\n\n@Entity\n@Table(name = \"users\")\npublic class UserEntity {\n  @Id\n  @GeneratedValue(strategy = GenerationType.IDENTITY)\n  public Long id;\n  @Column(nullable = false)\n  public String name;\n}\n",
+    "tags": ["java", "jpa", "entity"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-68",
+    "title": "Spring Data JPAのRepositoryインターフェース",
+    "description": "UserEntityに対する基本的なCRUDリポジトリです。",
+    "language": "Java",
+    "code": "import org.springframework.data.jpa.repository.JpaRepository;\n\npublic interface UserRepository extends JpaRepository<UserEntity, Long> {\n}\n",
+    "tags": ["java", "spring-data", "repository"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-69",
+    "title": "Hibernate ValidatorをJPAエンティティに付与",
+    "description": "JPAエンティティで入力制約も同時に定義する例です。",
+    "language": "Java",
+    "code": "import jakarta.persistence.*;\nimport jakarta.validation.constraints.*;\n\n@Entity\npublic class Account {\n  @Id\n  @GeneratedValue\n  public Long id;\n  @NotBlank\n  public String username;\n  @Size(min = 8)\n  public String password;\n}\n",
+    "tags": ["java", "jpa", "validation"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-70",
+    "title": "ListをMap<キー, List>に変換（groupingBy）",
+    "description": "departmentごとに社員リストをグルーピングする例です。",
+    "language": "Java",
+    "code": "import java.util.*;\nimport java.util.stream.*;\n\nclass Employee { String dept; String name; }\n\npublic class Main {\n  public static void main(String[] args) {\n    List<Employee> list = new ArrayList<>();\n    Map<String, List<Employee>> byDept = list.stream()\n        .collect(Collectors.groupingBy(e -> e.dept));\n    System.out.println(byDept);\n  }\n}\n",
+    "tags": ["java", "stream", "grouping"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+
+  {
+    "id": "java-71",
+    "title": "Propertiesと環境変数をマージする設定ローダー",
+    "description": "envが優先の簡易ConfigResolverです。",
+    "language": "Java",
+    "code": "import java.util.Properties;\n\npublic class Config {\n  private final Properties props;\n  public Config(Properties props) { this.props = props; }\n  public String get(String key, String def) {\n    String envKey = key.toUpperCase().replace('.', '_');\n    String env = System.getenv(envKey);\n    if (env != null) return env;\n    return props.getProperty(key, def);\n  }\n}\n",
+    "tags": ["java", "config", "env"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-72",
+    "title": "JSON差分（Map同士の差分キー検出）",
+    "description": "2つのMapの差分キーを一覧化するユーティリティです。",
+    "language": "Java",
+    "code": "import java.util.*;\n\npublic class DiffUtil {\n  public static Set<String> diffKeys(Map<String, ?> a, Map<String, ?> b) {\n    Set<String> keys = new HashSet<>();\n    keys.addAll(a.keySet());\n    keys.addAll(b.keySet());\n    Set<String> diff = new HashSet<>();\n    for (String k : keys) {\n      if (!Objects.equals(a.get(k), b.get(k))) {\n        diff.add(k);\n      }\n    }\n    return diff;\n  }\n}\n",
+    "tags": ["java", "diff", "map"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-73",
+    "title": "簡単なファイルローテーション",
+    "description": "ログファイルが一定サイズ以上ならバックアップして新規作成します。",
+    "language": "Java",
+    "code": "import java.nio.file.*;\n\npublic class LogRotate {\n  public static void rotate(Path log, long maxBytes) throws Exception {\n    if (Files.exists(log) && Files.size(log) > maxBytes) {\n      Path backup = log.resolveSibling(log.getFileName() + \".1\");\n      Files.move(log, backup, StandardCopyOption.REPLACE_EXISTING);\n    }\n  }\n}\n",
+    "tags": ["java", "log", "rotate"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-74",
+    "title": "URLからファイル名を安全に抽出",
+    "description": "クエリや危険文字を取り除いてファイル名にします。",
+    "language": "Java",
+    "code": "public class FileNameUtil {\n  public static String fromUrl(String url) {\n    String path = url.split(\"\\\\?\")[0];\n    String name = path.substring(path.lastIndexOf('/') + 1);\n    return name.replaceAll(\"[^a-zA-Z0-9._-]\", \"_\");\n  }\n}\n",
+    "tags": ["java", "filename", "url"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-75",
+    "title": "Durationを人間向け文字列に変換",
+    "description": "秒数を\"1h23m45s\"のような形式にします。",
+    "language": "Java",
+    "code": "public class DurationFmt {\n  public static String format(long seconds) {\n    long h = seconds / 3600;\n    long m = (seconds % 3600) / 60;\n    long s = seconds % 60;\n    StringBuilder sb = new StringBuilder();\n    if (h > 0) sb.append(h).append(\"h\");\n    if (m > 0) sb.append(m).append(\"m\");\n    if (s > 0 || sb.length() == 0) sb.append(s).append(\"s\");\n    return sb.toString();\n  }\n}\n",
+    "tags": ["java", "duration", "format"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-76",
+    "title": "標準入力からJSONを丸ごと読み込み",
+    "description": "CLIツールでパイプからJSONを受け取るときのパターンです。",
+    "language": "Java",
+    "code": "import java.io.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    String json = new String(System.in.readAllBytes());\n    System.out.println(json.length());\n  }\n}\n",
+    "tags": ["java", "stdin", "json"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-77",
+    "title": "一時ディレクトリ作成とクリーンアップ",
+    "description": "テンポラリ領域を使う簡単な例です。",
+    "language": "Java",
+    "code": "import java.nio.file.*;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    Path tmp = Files.createTempDirectory(\"work-\");\n    System.out.println(\"tmp=\" + tmp);\n    // 処理...\n    Files.walk(tmp)\n      .sorted((a,b) -> b.compareTo(a))\n      .forEach(p -> {\n        try { Files.deleteIfExists(p); } catch (Exception ignored) {}\n      });\n  }\n}\n",
+    "tags": ["java", "tempdir", "cleanup"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-78",
+    "title": "簡易キャッシュ（期限付き）",
+    "description": "一定時間で失効するメモリキャッシュの例です。",
+    "language": "Java",
+    "code": "import java.util.*;\n\npublic class ExpiringCache<K,V> {\n  private static class Entry<V> { V v; long expireAt; }\n  private final long ttlMs;\n  private final Map<K,Entry<V>> map = new HashMap<>();\n  public ExpiringCache(long ttlMs) { this.ttlMs = ttlMs; }\n  public synchronized void put(K k, V v) {\n    Entry<V> e = new Entry<>(); e.v = v; e.expireAt = System.currentTimeMillis() + ttlMs; map.put(k, e);\n  }\n  public synchronized V get(K k) {\n    Entry<V> e = map.get(k);\n    if (e == null || e.expireAt < System.currentTimeMillis()) { map.remove(k); return null; }\n    return e.v;\n  }\n}\n",
+    "tags": ["java", "cache", "expire"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-79",
+    "title": "標準エラー出力に色付きログ（ANSI）",
+    "description": "赤色でエラーメッセージを出すだけのサンプルです。",
+    "language": "Java",
+    "code": "public class Main {\n  public static void main(String[] args) {\n    String RED = \"\\u001B[31m\";\n    String RESET = \"\\u001B[0m\";\n    System.err.println(RED + \"ERROR!!\" + RESET);\n  }\n}\n",
+    "tags": ["java", "ansi", "console"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-80",
+    "title": "指定ポートがLISTEN中か確認",
+    "description": "Healthcheck的にソケット接続を試みる例です。",
+    "language": "Java",
+    "code": "import java.io.IOException;\nimport java.net.Socket;\n\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println(isOpen(\"localhost\", 8080, 1000));\n  }\n\n  static boolean isOpen(String host, int port, int timeoutMs) {\n    try (Socket s = new Socket()) {\n      s.connect(new java.net.InetSocketAddress(host, port), timeoutMs);\n      return true;\n    } catch (IOException e) {\n      return false;\n    }\n  }\n}\n",
+    "tags": ["java", "socket", "healthcheck"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+
+  {
+    "id": "java-81",
+    "title": "簡易設定クラスをJSONに保存/読込",
+    "description": "設定オブジェクトをJSONファイルに永続化する例です。",
+    "language": "Java",
+    "code": "import com.fasterxml.jackson.databind.ObjectMapper;\nimport java.nio.file.*;\n\nclass Settings {\n  public String name;\n  public int interval;\n}\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    ObjectMapper mapper = new ObjectMapper();\n    Settings s = new Settings(); s.name = \"job\"; s.interval = 10;\n    mapper.writeValue(Path.of(\"settings.json\").toFile(), s);\n    Settings loaded = mapper.readValue(Path.of(\"settings.json\").toFile(), Settings.class);\n    System.out.println(loaded.name);\n  }\n}\n",
+    "tags": ["java", "json", "settings"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-82",
+    "title": "Listのシャッフルとランダムピック",
+    "description": "テストデータのランダム並べ替えや抽選用の例です。",
+    "language": "Java",
+    "code": "import java.util.*;\n\npublic class Main {\n  public static void main(String[] args) {\n    List<String> list = new ArrayList<>(List.of(\"A\",\"B\",\"C\",\"D\"));\n    Collections.shuffle(list);\n    System.out.println(list);\n    System.out.println(\"pick: \" + list.get(0));\n  }\n}\n",
+    "tags": ["java", "shuffle", "random"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-83",
+    "title": "日時のISO8601変換（java.time）",
+    "description": "LocalDateTimeをISO8601文字列に変換します。",
+    "language": "Java",
+    "code": "import java.time.*;\nimport java.time.format.DateTimeFormatter;\n\npublic class Main {\n  public static void main(String[] args) {\n    LocalDateTime now = LocalDateTime.now();\n    String iso = now.format(DateTimeFormatter.ISO_DATE_TIME);\n    System.out.println(iso);\n  }\n}\n",
+    "tags": ["java", "datetime", "iso8601"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-84",
+    "title": "タイムアウト付きHTTPリクエスト",
+    "description": "接続・読み取りタイムアウトを設定したHttpClientです。",
+    "language": "Java",
+    "code": "import java.net.URI;\nimport java.net.http.*;\nimport java.time.Duration;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    HttpClient client = HttpClient.newBuilder()\n        .connectTimeout(Duration.ofSeconds(3))\n        .build();\n    HttpRequest req = HttpRequest.newBuilder(URI.create(\"https://example.com\"))\n        .timeout(Duration.ofSeconds(5))\n        .build();\n    client.send(req, HttpResponse.BodyHandlers.discarding());\n  }\n}\n",
+    "tags": ["java", "http", "timeout"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-85",
+    "title": "RestTemplateでシンプルなGET（Spring）",
+    "description": "RestTemplateを使ったGETの最小コードです。",
+    "language": "Java",
+    "code": "import org.springframework.web.client.RestTemplate;\n\npublic class Main {\n  public static void main(String[] args) {\n    RestTemplate rt = new RestTemplate();\n    String body = rt.getForObject(\"https://example.com\", String.class);\n    System.out.println(body);\n  }\n}\n",
+    "tags": ["java", "spring", "resttemplate"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-86",
+    "title": "BigDecimalで金額計算",
+    "description": "float/doubleではなくBigDecimalを使う基本形です。",
+    "language": "Java",
+    "code": "import java.math.BigDecimal;\n\npublic class Main {\n  public static void main(String[] args) {\n    BigDecimal price = new BigDecimal(\"1000\");\n    BigDecimal taxRate = new BigDecimal(\"0.1\");\n    BigDecimal tax = price.multiply(taxRate);\n    BigDecimal total = price.add(tax);\n    System.out.println(total);\n  }\n}\n",
+    "tags": ["java", "bigdecimal", "money"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-87",
+    "title": "Comparator.comparingで任意フィールドソート",
+    "description": "複数条件でオブジェクトをソートするパターンです。",
+    "language": "Java",
+    "code": "import java.util.*;\n\nclass Person {\n  String name; int age;\n}\n\npublic class Main {\n  public static void main(String[] args) {\n    List<Person> list = new ArrayList<>();\n    list.sort(Comparator.comparing((Person p) -> p.name).thenComparingInt(p -> p.age));\n  }\n}\n",
+    "tags": ["java", "comparator", "sort"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-88",
+    "title": "Optionalでnull安全アクセス",
+    "description": "ネストしたプロパティ参照をOptionalで書く例です。",
+    "language": "Java",
+    "code": "import java.util.Optional;\n\nclass Company { User owner; }\nclass User { String email; }\n\npublic class Main {\n  public static void main(String[] args) {\n    Company c = new Company();\n    String email = Optional.ofNullable(c)\n        .map(x -> x.owner)\n        .map(x -> x.email)\n        .orElse(\"none\");\n    System.out.println(email);\n  }\n}\n",
+    "tags": ["java", "optional", "null-safety"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-89",
+    "title": "関数型インターフェースを使ったリトライユーティリティ",
+    "description": "Supplierを渡して汎用的にリトライするヘルパーです。",
+    "language": "Java",
+    "code": "import java.util.function.Supplier;\n\npublic class Retry {\n  public static <T> T run(int max, Supplier<T> supplier) {\n    RuntimeException last = null;\n    for (int i = 0; i < max; i++) {\n      try { return supplier.get(); } catch (RuntimeException e) { last = e; }\n    }\n    throw last;\n  }\n}\n",
+    "tags": ["java", "retry", "functional"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-90",
+    "title": "簡易なJSONロガー（Map→1行JSON）",
+    "description": "ログ用にMapをJSON文字列にして1行出力します。",
+    "language": "Java",
+    "code": "import com.fasterxml.jackson.databind.ObjectMapper;\nimport java.util.Map;\n\npublic class JsonLogger {\n  private static final ObjectMapper mapper = new ObjectMapper();\n  public static void log(Map<String,Object> m) {\n    try { System.out.println(mapper.writeValueAsString(m)); }\n    catch (Exception e) { e.printStackTrace(); }\n  }\n}\n",
+    "tags": ["java", "logging", "json"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+
+  {
+    "id": "java-91",
+    "title": "リソースを安全に閉じるユーティリティ",
+    "description": "close時の例外を無視して静かに閉じるヘルパーです。",
+    "language": "Java",
+    "code": "public class CloseUtil {\n  public static void closeQuietly(AutoCloseable c) {\n    if (c == null) return;\n    try { c.close(); } catch (Exception ignored) {}\n  }\n}\n",
+    "tags": ["java", "close", "utility"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-92",
+    "title": "Listをチャンク分割するユーティリティ",
+    "description": "指定サイズごとにサブリストへ分割します。",
+    "language": "Java",
+    "code": "import java.util.*;\n\npublic class ListUtil {\n  public static <T> List<List<T>> chunk(List<T> list, int size) {\n    List<List<T>> out = new ArrayList<>();\n    for (int i = 0; i < list.size(); i += size) {\n      out.add(list.subList(i, Math.min(list.size(), i + size)));\n    }\n    return out;\n  }\n}\n",
+    "tags": ["java", "list", "chunk"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-93",
+    "title": "ファイル末尾をtailする簡単ツール",
+    "description": "ログファイルの追記を監視し続けるサンプルです。",
+    "language": "Java",
+    "code": "import java.io.RandomAccessFile;\n\npublic class Tail {\n  public static void main(String[] args) throws Exception {\n    try (RandomAccessFile raf = new RandomAccessFile(\"app.log\", \"r\")) {\n      long pos = raf.length();\n      while (true) {\n        long len = raf.length();\n        if (len > pos) {\n          raf.seek(pos);\n          String line;\n          while ((line = raf.readLine()) != null) System.out.println(line);\n          pos = raf.getFilePointer();\n        }\n        Thread.sleep(1000);\n      }\n    }\n  }\n}\n",
+    "tags": ["java", "tail", "log"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-94",
+    "title": "HTTPヘッダからBearerトークンを抜き出す",
+    "description": "\"Authorization: Bearer xxx\"形式からトークンを取得する例です。",
+    "language": "Java",
+    "code": "public class AuthUtil {\n  public static String extractBearer(String header) {\n    if (header == null) return null;\n    if (!header.startsWith(\"Bearer \")) return null;\n    return header.substring(7);\n  }\n}\n",
+    "tags": ["java", "auth", "bearer"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-95",
+    "title": "時刻の範囲判定（業務時間チェック）",
+    "description": "今が9:00〜18:00の間かどうかを判定します。",
+    "language": "Java",
+    "code": "import java.time.*;\n\npublic class Main {\n  public static void main(String[] args) {\n    LocalTime now = LocalTime.now();\n    boolean business = !now.isBefore(LocalTime.of(9, 0)) && now.isBefore(LocalTime.of(18, 0));\n    System.out.println(business);\n  }\n}\n",
+    "tags": ["java", "time", "business-hours"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-96",
+    "title": "単純なリトライ付きHTTP GETユーティリティ",
+    "description": "HttpClientとリトライロジックを組み合わせたヘルパーです。",
+    "language": "Java",
+    "code": "import java.net.URI;\nimport java.net.http.*;\n\npublic class HttpHelper {\n  private static final HttpClient client = HttpClient.newHttpClient();\n\n  public static String getWithRetry(String url, int max) throws Exception {\n    RuntimeException last = null;\n    for (int i = 0; i < max; i++) {\n      try {\n        HttpRequest req = HttpRequest.newBuilder(URI.create(url)).build();\n        return client.send(req, HttpResponse.BodyHandlers.ofString()).body();\n      } catch (RuntimeException | java.io.IOException e) {\n        last = new RuntimeException(e);\n      }\n    }\n    throw last;\n  }\n}\n",
+    "tags": ["java", "http", "retry"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-97",
+    "title": "シンプルなメトリクスカウンタ",
+    "description": "名前付きカウンタを増やしてメトリクス出力する例です。",
+    "language": "Java",
+    "code": "import java.util.concurrent.ConcurrentHashMap;\n\npublic class Metrics {\n  private static final ConcurrentHashMap<String, Long> counters = new ConcurrentHashMap<>();\n  public static void inc(String name) {\n    counters.merge(name, 1L, Long::sum);\n  }\n  public static void dump() {\n    counters.forEach((k,v) -> System.out.println(k + \"=\" + v));\n  }\n}\n",
+    "tags": ["java", "metrics", "counter"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-98",
+    "title": "コマンド実行結果を文字列で返すユーティリティ",
+    "description": "よく使う\"execして結果を返す\"処理をまとめたものです。",
+    "language": "Java",
+    "code": "import java.io.*;\n\npublic class ExecUtil {\n  public static String exec(String... cmd) throws Exception {\n    Process p = new ProcessBuilder(cmd).redirectErrorStream(true).start();\n    try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))) {\n      StringBuilder sb = new StringBuilder();\n      String line;\n      while ((line = br.readLine()) != null) sb.append(line).append('\\n');\n      p.waitFor();\n      return sb.toString();\n    }\n  }\n}\n",
+    "tags": ["java", "process", "exec"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-99",
+    "title": "Mapのキーを別の型に変換するユーティリティ",
+    "description": "StringキーのMapをEnumキーのMapに変換する例です。",
+    "language": "Java",
+    "code": "import java.util.*;\n\npublic class MapKeyUtil {\n  public static <E extends Enum<E>, V> Map<E,V> toEnumKey(Class<E> type, Map<String,V> src) {\n    Map<E,V> dst = new EnumMap<>(type);\n    for (var e : src.entrySet()) {\n      dst.put(Enum.valueOf(type, e.getKey()), e.getValue());\n    }\n    return dst;\n  }\n}\n",
+    "tags": ["java", "map", "enum"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-100",
+    "title": "JUnit風の簡易アサートユーティリティ",
+    "description": "テストコードで使える軽量なassertEqualsです。",
+    "language": "Java",
+    "code": "public class Assert {\n  public static void equals(Object expected, Object actual) {\n    if (expected == null ? actual != null : !expected.equals(actual)) {\n      throw new AssertionError(\"expected=\" + expected + \" actual=\" + actual);\n    }\n  }\n}\n",
+    "tags": ["java", "assert", "test"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  }
+]
