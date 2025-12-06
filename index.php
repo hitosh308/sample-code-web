@@ -195,7 +195,7 @@ if (!$hasSearch) {
     <meta http-equiv="Expires" content="0">
     <title>サンプルコード集</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-    <link rel="stylesheet" href="assets/style.css?v=1.0.4">
+<link rel="stylesheet" href="assets/style.css?v=1.0.4">
 </head>
 <body>
 <header class="site-header">
@@ -258,10 +258,17 @@ if (!$hasSearch) {
                                         <?php
                                             $tagId = 'tag-' . htmlspecialchars(preg_replace('/[^a-zA-Z0-9_-]/', '-', $tag), ENT_QUOTES, 'UTF-8');
                                             $isChecked = in_array($tag, $searchTags, true);
+                                            $tagLabel = htmlspecialchars($tag, ENT_QUOTES, 'UTF-8');
+                                            $tagSearch = htmlspecialchars(mb_strtolower(ltrim((string)$tag, "# \t\n\r\0\x0B")), ENT_QUOTES, 'UTF-8');
                                         ?>
-                                        <label for="<?php echo $tagId; ?>" class="tag-option <?php echo $isChecked ? 'is-active' : ''; ?>" data-label="#<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?>">
-                                            <input type="checkbox" id="<?php echo $tagId; ?>" name="tags[]" value="<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $isChecked ? 'checked' : ''; ?>>
-                                            <span>#<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?></span>
+                                        <label
+                                            for="<?php echo $tagId; ?>"
+                                            class="tag-option <?php echo $isChecked ? 'is-active' : ''; ?>"
+                                            data-label="#<?php echo $tagLabel; ?>"
+                                            data-search="<?php echo $tagSearch; ?>"
+                                        >
+                                            <input type="checkbox" id="<?php echo $tagId; ?>" name="tags[]" value="<?php echo $tagLabel; ?>" <?php echo $isChecked ? 'checked' : ''; ?>>
+                                            <span>#<?php echo $tagLabel; ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -398,6 +405,6 @@ if (!$hasSearch) {
     <div class="panel-backdrop" id="panel-backdrop" hidden></div>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<script src="assets/script.js?v=1.0.4"></script>
+<script src="assets/script.js?v=1.0.5"></script>
 </body>
 </html>

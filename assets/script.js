@@ -84,16 +84,32 @@ document.addEventListener('DOMContentLoaded', () => {
     tagOptionsContainer.appendChild(tagFilterEmptyMessage);
   }
 
+  function normalizeTagLabel(value = '') {
+    return value
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/^#+/, '');
+  }
+
   function filterTagOptions(term = '') {
     if (!tagOptionsContainer) return;
 
-    const normalizedTerm = term.trim().toLowerCase();
+    const normalizedTerm = normalizeTagLabel(term);
     let visibleCount = 0;
 
     tagOptions.forEach((option) => {
-      const label = option.dataset.label?.toLowerCase() ?? option.textContent?.toLowerCase() ?? '';
-      const isMatch = normalizedTerm === '' || label.includes(normalizedTerm);
+      const searchBase = option.dataset.search ?? '';
+      const label = option.dataset.label ?? option.textContent ?? '';
+      const candidates = [searchBase, label]
+        .map((value) => normalizeTagLabel(value))
+        .filter(Boolean);
+
+      const isMatch = normalizedTerm === '' || candidates.some((value) => value.includes(normalizedTerm));
+
       option.hidden = !isMatch;
+      option.setAttribute('aria-hidden', option.hidden ? 'true' : 'false');
+
       if (isMatch) {
         visibleCount += 1;
       }
