@@ -1,0 +1,1015 @@
+[
+  {
+    "id": "javascript-1",
+    "title": "入力イベントのデバウンス関数",
+    "description": "入力ボックスなどで連続入力時の処理呼び出し回数を減らすデバウンス関数です。",
+    "language": "JavaScript",
+    "code": "function debounce(fn, delay = 300) {\n  let timer;\n  return (...args) => {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn(...args), delay);\n  };\n}\n\nconst input = document.querySelector('#search');\nconst onInput = debounce(e => {\n  console.log('検索ワード:', e.target.value);\n}, 500);\n\ninput.addEventListener('input', onInput);\n",
+    "tags": ["debounce", "event", "input"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-2",
+    "title": "スクロールイベントのスロットル処理",
+    "description": "スクロールイベントの負荷を軽減するためのスロットル関数です。",
+    "language": "JavaScript",
+    "code": "function throttle(fn, interval = 200) {\n  let last = 0;\n  let timer;\n  return (...args) => {\n    const now = Date.now();\n    if (now - last >= interval) {\n      last = now;\n      fn(...args);\n    } else {\n      clearTimeout(timer);\n      timer = setTimeout(() => {\n        last = Date.now();\n        fn(...args);\n      }, interval - (now - last));\n    }\n  };\n}\n\nwindow.addEventListener('scroll', throttle(() => {\n  console.log('scrollY:', window.scrollY);\n}, 250));\n",
+    "tags": ["throttle", "scroll", "performance"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-3",
+    "title": "fetchでJSONを取得するユーティリティ",
+    "description": "エラー処理付きでJSON APIを叩くラッパー関数です。",
+    "language": "JavaScript",
+    "code": "async function fetchJson(url, options = {}) {\n  const res = await fetch(url, options);\n  if (!res.ok) {\n    const text = await res.text();\n    throw new Error(`HTTP ${res.status}: ${text}`);\n  }\n  return res.json();\n}\n\nfetchJson('/api/user')\n  .then(data => console.log('user', data))\n  .catch(err => console.error('API error', err));\n",
+    "tags": ["fetch", "api", "json"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-4",
+    "title": "タイムアウト付きfetch",
+    "description": "一定時間でAbortControllerを使ってfetchを中断するサンプルです。",
+    "language": "JavaScript",
+    "code": "async function fetchWithTimeout(url, { timeout = 5000, ...options } = {}) {\n  const controller = new AbortController();\n  const id = setTimeout(() => controller.abort(), timeout);\n  try {\n    const res = await fetch(url, { ...options, signal: controller.signal });\n    if (!res.ok) throw new Error(`HTTP ${res.status}`);\n    return await res.json();\n  } finally {\n    clearTimeout(id);\n  }\n}\n\nfetchWithTimeout('/api/slow', { timeout: 3000 })\n  .then(console.log)\n  .catch(err => console.error('timeout or error', err));\n",
+    "tags": ["fetch", "timeout", "abortcontroller"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-5",
+    "title": "Promise.allSettledで複数APIの結果をまとめる",
+    "description": "複数のAPIを同時に叩き、成功/失敗をまとめて処理します。",
+    "language": "JavaScript",
+    "code": "async function fetchMany(urls) {\n  const tasks = urls.map(url => fetch(url).then(r => r.json()));\n  const results = await Promise.allSettled(tasks);\n  const success = [];\n  const failed = [];\n  results.forEach((r, i) => {\n    if (r.status === 'fulfilled') success.push({ url: urls[i], data: r.value });\n    else failed.push({ url: urls[i], reason: r.reason });\n  });\n  return { success, failed };\n}\n\nfetchMany(['/api/a', '/api/b', '/api/c']).then(console.log);\n",
+    "tags": ["promise", "allSettled", "fetch"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-6",
+    "title": "指数バックオフ付きリトライ処理",
+    "description": "ネットワークエラー時に指定回数までリトライするラッパーです。",
+    "language": "JavaScript",
+    "code": "async function retry(fn, { retries = 3, baseDelay = 300 } = {}) {\n  let attempt = 0;\n  while (true) {\n    try {\n      return await fn();\n    } catch (e) {\n      attempt++;\n      if (attempt > retries) throw e;\n      const delay = baseDelay * 2 ** (attempt - 1);\n      await new Promise(r => setTimeout(r, delay));\n    }\n  }\n}\n\nretry(() => fetch('/api/flaky').then(r => r.json()))\n  .then(console.log)\n  .catch(err => console.error('失敗', err));\n",
+    "tags": ["retry", "backoff", "async"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-7",
+    "title": "localStorageの安全ラッパー",
+    "description": "JSONのシリアライズ/パースを隠蔽したlocalStorageヘルパーです。",
+    "language": "JavaScript",
+    "code": "const storage = {\n  get(key, fallback = null) {\n    try {\n      const v = localStorage.getItem(key);\n      return v == null ? fallback : JSON.parse(v);\n    } catch {\n      return fallback;\n    }\n  },\n  set(key, value) {\n    localStorage.setItem(key, JSON.stringify(value));\n  },\n  remove(key) {\n    localStorage.removeItem(key);\n  }\n};\n\nstorage.set('user', { name: 'Taro' });\nconsole.log(storage.get('user'));\n",
+    "tags": ["localStorage", "utility", "json"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-8",
+    "title": "セッションストレージのユーティリティ",
+    "description": "sessionStorage用の簡易ユーティリティです。",
+    "language": "JavaScript",
+    "code": "const session = {\n  get(key, fallback = null) {\n    try {\n      const v = sessionStorage.getItem(key);\n      return v == null ? fallback : JSON.parse(v);\n    } catch {\n      return fallback;\n    }\n  },\n  set(key, value) {\n    sessionStorage.setItem(key, JSON.stringify(value));\n  },\n  remove(key) {\n    sessionStorage.removeItem(key);\n  }\n};\n\nsession.set('step', 2);\nconsole.log(session.get('step', 0));\n",
+    "tags": ["sessionStorage", "utility", "state"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-9",
+    "title": "Cookieの読み書きヘルパー",
+    "description": "document.cookieを扱いやすくする小さなユーティリティです。",
+    "language": "JavaScript",
+    "code": "const cookie = {\n  set(name, value, days = 7) {\n    const d = new Date();\n    d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);\n    document.cookie = `${name}=${encodeURIComponent(value)};expires=${d.toUTCString()};path=/`;\n  },\n  get(name) {\n    return document.cookie\n      .split('; ')\n      .find(c => c.startsWith(name + '='))\n      ?.split('=')[1] ?? null;\n  },\n  remove(name) {\n    this.set(name, '', -1);\n  }\n};\n\ncookie.set('lang', 'ja');\nconsole.log(cookie.get('lang'));\n",
+    "tags": ["cookie", "utility", "browser"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-10",
+    "title": "クエリ文字列をオブジェクトにパース",
+    "description": "URLの?以降をオブジェクトに変換する関数です。",
+    "language": "JavaScript",
+    "code": "function parseQuery(queryString = window.location.search) {\n  const params = new URLSearchParams(queryString);\n  const obj = {};\n  for (const [k, v] of params.entries()) {\n    if (obj[k] === undefined) obj[k] = v;\n    else if (Array.isArray(obj[k])) obj[k].push(v);\n    else obj[k] = [obj[k], v];\n  }\n  return obj;\n}\n\nconsole.log(parseQuery('?tag=js&tag=web&page=2'));\n",
+    "tags": ["url", "querystring", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+
+  {
+    "id": "javascript-11",
+    "title": "オブジェクトからクエリ文字列を生成",
+    "description": "オブジェクトをURLのクエリ文字列に変換します。",
+    "language": "JavaScript",
+    "code": "function toQueryString(params) {\n  const search = new URLSearchParams();\n  Object.entries(params).forEach(([k, v]) => {\n    if (Array.isArray(v)) v.forEach(val => search.append(k, val));\n    else if (v !== undefined && v !== null) search.append(k, v);\n  });\n  return '?' + search.toString();\n}\n\nconsole.log(toQueryString({ tag: ['js', 'web'], page: 2 }));\n",
+    "tags": ["url", "querystring", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-12",
+    "title": "structuredCloneフォールバック付きディープコピー",
+    "description": "structuredCloneがない環境でのディープコピーを含むヘルパーです。",
+    "language": "JavaScript",
+    "code": "function deepClone(value) {\n  if (typeof structuredClone === 'function') return structuredClone(value);\n  return JSON.parse(JSON.stringify(value));\n}\n\nconst original = { a: 1, b: { c: 2 } };\nconst copy = deepClone(original);\ncopy.b.c = 99;\nconsole.log(original.b.c, copy.b.c);\n",
+    "tags": ["clone", "structuredClone", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-13",
+    "title": "オブジェクトの浅い差分を取得",
+    "description": "2つのオブジェクトの値の違いを抽出します。",
+    "language": "JavaScript",
+    "code": "function shallowDiff(a, b) {\n  const diff = {};\n  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);\n  keys.forEach(k => {\n    if (a[k] !== b[k]) diff[k] = { from: a[k], to: b[k] };\n  });\n  return diff;\n}\n\nconsole.log(shallowDiff({ a: 1, b: 2 }, { a: 1, b: 3, c: 4 }));\n",
+    "tags": ["object", "diff", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-14",
+    "title": "配列を指定サイズで分割するchunk",
+    "description": "大きな配列を小さな塊に分割する関数です。",
+    "language": "JavaScript",
+    "code": "function chunk(array, size = 2) {\n  const result = [];\n  for (let i = 0; i < array.length; i += size) {\n    result.push(array.slice(i, i + size));\n  }\n  return result;\n}\n\nconsole.log(chunk([1, 2, 3, 4, 5], 2));\n",
+    "tags": ["array", "chunk", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-15",
+    "title": "指定キーで配列要素をユニーク化",
+    "description": "idなどのキーで重複オブジェクトを削除します。",
+    "language": "JavaScript",
+    "code": "function uniqueBy(arr, key) {\n  const map = new Map();\n  arr.forEach(item => {\n    map.set(item[key], item);\n  });\n  return [...map.values()];\n}\n\nconst users = [\n  { id: 1, name: 'A' },\n  { id: 2, name: 'B' },\n  { id: 1, name: 'A2' }\n];\nconsole.log(uniqueBy(users, 'id'));\n",
+    "tags": ["array", "unique", "map"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-16",
+    "title": "配列をgroupByでグルーピング",
+    "description": "条件関数で配列をグループ分けするユーティリティです。",
+    "language": "JavaScript",
+    "code": "function groupBy(arr, fn) {\n  return arr.reduce((acc, item) => {
+    const key = fn(item);
+    (acc[key] ||= []).push(item);
+    return acc;
+  }, {});\n}\n\nconst items = [\n  { category: 'fruit', name: 'apple' },\n  { category: 'fruit', name: 'banana' },\n  { category: 'veg', name: 'carrot' }\n];\nconsole.log(groupBy(items, i => i.category));\n",
+    "tags": ["array", "groupBy", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-17",
+    "title": "イベントデリゲーションのユーティリティ",
+    "description": "親要素にだけイベントリスナを設定する汎用関数です。",
+    "language": "JavaScript",
+    "code": "function delegate(parent, type, selector, handler) {\n  parent.addEventListener(type, e => {\n    const target = e.target.closest(selector);\n    if (target && parent.contains(target)) {\n      handler(e, target);\n    }\n  });\n}\n\ndelegate(document.body, 'click', '[data-btn]', (e, el) => {\n  console.log('clicked', el.dataset.btn);\n});\n",
+    "tags": ["event", "delegate", "dom"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-18",
+    "title": "CustomEventで独自イベント発火",
+    "description": "DOM要素で独自のアプリケーションイベントを扱うサンプルです。",
+    "language": "JavaScript",
+    "code": "const el = document.createElement('div');\n\nel.addEventListener('user:login', e => {\n  console.log('Login event payload:', e.detail);\n});\n\nconst evt = new CustomEvent('user:login', {\n  detail: { id: 1, name: 'Taro' }\n});\n\nel.dispatchEvent(evt);\n",
+    "tags": ["CustomEvent", "event", "dom"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-19",
+    "title": "シンプルなPub/Subイベントバス",
+    "description": "アプリ内でゆるくコンポーネントを連携させるためのイベントバスです。",
+    "language": "JavaScript",
+    "code": "function createBus() {\n  const map = new Map();\n  return {\n    on(event, handler) {\n      (map.get(event) || map.set(event, []).get(event)).push(handler);\n    },\n    off(event, handler) {\n      const list = map.get(event);\n      if (!list) return;\n      const i = list.indexOf(handler);\n      if (i >= 0) list.splice(i, 1);\n    },\n    emit(event, payload) {\n      (map.get(event) || []).forEach(h => h(payload));\n    }\n  };\n}\n\nconst bus = createBus();\nbus.on('message', m => console.log('received:', m));\nbus.emit('message', 'Hello');\n",
+    "tags": ["pubsub", "event", "architecture"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-20",
+    "title": "ログレベル付きシンプルロガー",
+    "description": "ログレベルに応じてconsole出力を切り替えるロガーです。",
+    "language": "JavaScript",
+    "code": "function createLogger(level = 'info') {\n  const levels = ['debug', 'info', 'warn', 'error'];\n  const currentIndex = levels.indexOf(level);\n  const noop = () => {};\n  const logger = {};\n  levels.forEach((lvl, i) => {\n    logger[lvl] = i >= currentIndex ? console[lvl] || console.log : noop;\n  });\n  return logger;\n}\n\nconst log = createLogger('warn');\nlog.debug('表示されない');\nlog.error('エラー');\n",
+    "tags": ["logger", "console", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+
+  {
+    "id": "javascript-21",
+    "title": "関数の実行時間を計測するユーティリティ",
+    "description": "処理時間を簡単に測るためのラッパーです。",
+    "language": "JavaScript",
+    "code": "async function measure(label, fn) {\n  const start = performance.now();\n  const result = await fn();\n  const end = performance.now();\n  console.log(`${label}: ${(end - start).toFixed(2)}ms`);\n  return result;\n}\n\nmeasure('heavyCalc', () => {\n  let s = 0;\n  for (let i = 0; i < 1e6; i++) s += i;\n  return s;\n});\n",
+    "tags": ["performance", "measure", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-22",
+    "title": "結果をキャッシュするメモ化関数",
+    "description": "引数に応じて関数結果をキャッシュします。",
+    "language": "JavaScript",
+    "code": "function memoize(fn) {\n  const cache = new Map();\n  return (...args) => {\n    const key = JSON.stringify(args);\n    if (cache.has(key)) return cache.get(key);\n    const result = fn(...args);\n    cache.set(key, result);\n    return result;\n  };\n}\n\nconst slowFib = n => (n <= 1 ? n : slowFib(n - 1) + slowFib(n - 2));\nconst fastFib = memoize(slowFib);\nconsole.log(fastFib(35));\n",
+    "tags": ["memoize", "cache", "performance"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-23",
+    "title": "超シンプルなLRUキャッシュ",
+    "description": "Mapを使った最小限のLRUキャッシュ実装です。",
+    "language": "JavaScript",
+    "code": "function createLRU(limit = 50) {\n  const map = new Map();\n  return {\n    get(key) {\n      if (!map.has(key)) return undefined;\n      const value = map.get(key);\n      map.delete(key);\n      map.set(key, value);\n      return value;\n    },\n    set(key, value) {\n      if (map.has(key)) map.delete(key);\n      map.set(key, value);\n      if (map.size > limit) {\n        const firstKey = map.keys().next().value;\n        map.delete(firstKey);\n      }\n    }\n  };\n}\n\nconst cache = createLRU(2);\ncache.set('a', 1);\ncache.set('b', 2);\ncache.get('a');\ncache.set('c', 3);\nconsole.log(cache.get('b')); // undefined\n",
+    "tags": ["cache", "LRU", "map"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-24",
+    "title": "DOMの読み込み完了をPromiseで待つ",
+    "description": "DOMContentLoadedをPromise化して扱いやすくします。",
+    "language": "JavaScript",
+    "code": "function domReady() {\n  if (document.readyState === 'loading') {\n    return new Promise(resolve => {\n      document.addEventListener('DOMContentLoaded', () => resolve());\n    });\n  }\n  return Promise.resolve();\n}\n\n(async () => {\n  await domReady();\n  console.log('DOM ready');\n})();\n",
+    "tags": ["dom", "promise", "ready"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-25",
+    "title": "スムーススクロールで要素まで移動",
+    "description": "指定セレクタの要素までアニメーション付きでスクロールします。",
+    "language": "JavaScript",
+    "code": "function scrollToSelector(selector) {\n  const el = document.querySelector(selector);\n  if (!el) return;\n  el.scrollIntoView({ behavior: 'smooth', block: 'start' });\n}\n\ndocument.querySelector('#to-top').addEventListener('click', e => {\n  e.preventDefault();\n  scrollToSelector('body');\n});\n",
+    "tags": ["scroll", "dom", "ui"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-26",
+    "title": "クリップボードにテキストをコピー",
+    "description": "Clipboard APIとexecCommandのフォールバック対応です。",
+    "language": "JavaScript",
+    "code": "async function copyText(text) {\n  if (navigator.clipboard?.writeText) {\n    return navigator.clipboard.writeText(text);\n  }\n  const textarea = document.createElement('textarea');\n  textarea.value = text;\n  textarea.style.position = 'fixed';\n  textarea.style.left = '-9999px';\n  document.body.appendChild(textarea);\n  textarea.select();\n  document.execCommand('copy');\n  document.body.removeChild(textarea);\n}\n\ncopyText('Hello').then(() => alert('copied!'));\n",
+    "tags": ["clipboard", "copy", "browser"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-27",
+    "title": "ダークモードの検出と変更イベント",
+    "description": "OS設定のダークモード検出と変更監視を行います。",
+    "language": "JavaScript",
+    "code": "const media = window.matchMedia('(prefers-color-scheme: dark)');\n\nfunction applyTheme(e) {\n  document.documentElement.dataset.theme = e.matches ? 'dark' : 'light';\n}\n\napplyTheme(media);\nmedia.addEventListener('change', applyTheme);\n",
+    "tags": ["darkmode", "matchMedia", "theme"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-28",
+    "title": "IntersectionObserverで要素の表示検知",
+    "description": "要素がビューポートに入ったかどうかを検出します。",
+    "language": "JavaScript",
+    "code": "function observeInView(el, callback, options = {}) {\n  const io = new IntersectionObserver(entries => {\n    entries.forEach(entry => callback(entry.isIntersecting, entry));\n  }, options);\n  io.observe(el);\n  return () => io.disconnect();\n}\n\nconst target = document.querySelector('#target');\nobserveInView(target, inView => {\n  console.log('in view?', inView);\n});\n",
+    "tags": ["IntersectionObserver", "scroll", "lazyload"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-29",
+    "title": "ResizeObserverで要素サイズの変化検出",
+    "description": "要素のリサイズを監視してレイアウト変更に対応します。",
+    "language": "JavaScript",
+    "code": "const box = document.querySelector('#box');\n\nconst ro = new ResizeObserver(entries => {\n  for (const entry of entries) {\n    const { width, height } = entry.contentRect;\n    console.log('size:', width, height);\n  }\n});\n\nro.observe(box);\n",
+    "tags": ["ResizeObserver", "layout", "dom"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-30",
+    "title": "ドラッグで要素を移動させる",
+    "description": "マウスドラッグでDOM要素を自由に移動させます。",
+    "language": "JavaScript",
+    "code": "function makeDraggable(el) {\n  let startX, startY, originX, originY;\n  function onDown(e) {\n    startX = e.clientX;\n    startY = e.clientY;\n    const rect = el.getBoundingClientRect();\n    originX = rect.left;\n    originY = rect.top;\n    document.addEventListener('mousemove', onMove);\n    document.addEventListener('mouseup', onUp);\n  }\n  function onMove(e) {\n    const dx = e.clientX - startX;\n    const dy = e.clientY - startY;\n    el.style.transform = `translate(${originX + dx}px, ${originY + dy}px)`;\n  }\n  function onUp() {\n    document.removeEventListener('mousemove', onMove);\n    document.removeEventListener('mouseup', onUp);\n  }\n  el.addEventListener('mousedown', onDown);\n}\n\nmakeDraggable(document.querySelector('#drag')); \n",
+    "tags": ["drag", "mouse", "ui"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+
+  {
+    "id": "javascript-31",
+    "title": "ファイル入力からテキストを読み込む",
+    "description": "input[type=file]から選択されたテキストファイルを読み込みます。",
+    "language": "JavaScript",
+    "code": "document.querySelector('#file').addEventListener('change', e => {\n  const file = e.target.files[0];\n  if (!file) return;\n  const reader = new FileReader();\n  reader.onload = () => {\n    console.log('内容:', reader.result);\n  };\n  reader.readAsText(file);\n});\n",
+    "tags": ["FileReader", "file", "input"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-32",
+    "title": "XHRを使ったアップロード進捗表示",
+    "description": "ファイルアップロードの進捗率を取得して表示します。",
+    "language": "JavaScript",
+    "code": "function uploadWithProgress(url, file, onProgress) {\n  const xhr = new XMLHttpRequest();\n  xhr.open('POST', url);\n  xhr.upload.addEventListener('progress', e => {\n    if (e.lengthComputable) {\n      const percent = (e.loaded / e.total) * 100;\n      onProgress(percent);\n    }\n  });\n  xhr.onload = () => console.log('done', xhr.status);\n  const form = new FormData();\n  form.append('file', file);\n  xhr.send(form);\n}\n\n// input changeで呼び出すなど\n",
+    "tags": ["upload", "progress", "XMLHttpRequest"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-33",
+    "title": "Blobをダウンロードさせるユーティリティ",
+    "description": "生成したBlobをユーザーに保存させます。",
+    "language": "JavaScript",
+    "code": "function downloadBlob(blob, filename) {\n  const url = URL.createObjectURL(blob);\n  const a = document.createElement('a');\n  a.href = url;\n  a.download = filename;\n  a.click();\n  URL.revokeObjectURL(url);\n}\n\nconst blob = new Blob(['Hello'], { type: 'text/plain' });\ndownloadBlob(blob, 'hello.txt');\n",
+    "tags": ["blob", "download", "file"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-34",
+    "title": "data-src属性を使った画像の遅延読み込み",
+    "description": "IntersectionObserverで画像を遅延ロードします。",
+    "language": "JavaScript",
+    "code": "const images = document.querySelectorAll('img[data-src]');\nconst io = new IntersectionObserver(entries => {\n  entries.forEach(entry => {\n    if (!entry.isIntersecting) return;\n    const img = entry.target;\n    img.src = img.dataset.src;\n    img.removeAttribute('data-src');\n    io.unobserve(img);\n  });\n});\nimages.forEach(img => io.observe(img));\n",
+    "tags": ["lazyload", "image", "IntersectionObserver"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-35",
+    "title": "HTML標準バリデーションを使ったフォームチェック",
+    "description": "Constraint Validation APIを使ったシンプル検証です。",
+    "language": "JavaScript",
+    "code": "const form = document.querySelector('#form');\n\nform.addEventListener('submit', e => {\n  if (!form.checkValidity()) {\n    e.preventDefault();\n    const firstInvalid = form.querySelector(':invalid');\n    firstInvalid.focus();\n    alert(firstInvalid.validationMessage);\n  }\n});\n",
+    "tags": ["form", "validation", "html5"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-36",
+    "title": "フォームの値をJSONオブジェクトに変換",
+    "description": "FormDataからネストなしのオブジェクトを生成します。",
+    "language": "JavaScript",
+    "code": "function formToJson(form) {\n  const data = new FormData(form);\n  const obj = {};\n  for (const [k, v] of data.entries()) {\n    if (obj[k] === undefined) obj[k] = v;\n    else if (Array.isArray(obj[k])) obj[k].push(v);\n    else obj[k] = [obj[k], v];\n  }\n  return obj;\n}\n\nconst form = document.querySelector('#form');\nform.addEventListener('submit', e => {\n  e.preventDefault();\n  console.log(formToJson(form));\n});\n",
+    "tags": ["form", "FormData", "json"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-37",
+    "title": "二重送信防止ボタン",
+    "description": "送信ボタンを1回押したら再度押せないようにします。",
+    "language": "JavaScript",
+    "code": "const form = document.querySelector('#form');\nconst submit = form.querySelector('[type=submit]');\n\nform.addEventListener('submit', e => {\n  if (submit.disabled) {\n    e.preventDefault();\n    return;\n  }\n  submit.disabled = true;\n  submit.textContent = '送信中...';\n});\n",
+    "tags": ["form", "submit", "ux"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-38",
+    "title": "キーボードショートカットハンドラ",
+    "description": "Ctrl+Sなどのショートカットを簡単に扱うユーティリティです。",
+    "language": "JavaScript",
+    "code": "function onShortcut(combo, handler) {\n  const keys = new Set(combo.toLowerCase().split('+'));\n  window.addEventListener('keydown', e => {\n    const pressed = new Set();\n    if (e.ctrlKey || e.metaKey) pressed.add('ctrl');\n    if (e.shiftKey) pressed.add('shift');\n    if (e.altKey) pressed.add('alt');\n    pressed.add(e.key.toLowerCase());\n    if (keys.size === pressed.size && [...keys].every(k => pressed.has(k))) {\n      e.preventDefault();\n      handler(e);\n    }\n  });\n}\n\nonShortcut('ctrl+s', () => alert('save!'));\n",
+    "tags": ["keyboard", "shortcut", "event"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-39",
+    "title": "ユーザーのアイドル状態検知",
+    "description": "一定時間操作がないとアイドルとみなす監視ロジックです。",
+    "language": "JavaScript",
+    "code": "function trackIdle(timeout = 60000, onChange) {\n  let timer;\n  let idle = false;\n  const reset = () => {\n    clearTimeout(timer);\n    if (idle) {\n      idle = false;\n      onChange(false);\n    }\n    timer = setTimeout(() => {\n      idle = true;\n      onChange(true);\n    }, timeout);\n  };\n  ['mousemove', 'keydown', 'click', 'scroll'].forEach(ev =>\n    window.addEventListener(ev, reset, { passive: true })\n  );\n  reset();\n}\n\ntrackIdle(5000, idle => console.log('idle?', idle));\n",
+    "tags": ["idle", "timer", "event"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-40",
+    "title": "カウントダウンタイマー",
+    "description": "指定秒数から0までカウントダウンするユーティリティです。",
+    "language": "JavaScript",
+    "code": "function startCountdown(seconds, onTick, onEnd) {\n  let remain = seconds;\n  onTick(remain);\n  const id = setInterval(() => {\n    remain--;\n    onTick(remain);\n    if (remain <= 0) {\n      clearInterval(id);\n      onEnd?.();\n    }\n  }, 1000);\n  return () => clearInterval(id);\n}\n\nstartCountdown(10, s => console.log(s), () => console.log('end'));\n",
+    "tags": ["timer", "countdown", "interval"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-41",
+    "title": "日付を任意フォーマット文字列に変換するヘルパー",
+    "description": "YYYY/MM/DD HH:mm:ss 形式など、簡易的な日付フォーマットを行う関数です。",
+    "language": "JavaScript",
+    "code": "function formatDate(date, format = 'YYYY-MM-DD HH:mm:ss') {\n  const d = date instanceof Date ? date : new Date(date);\n  const pad = (n) => String(n).padStart(2, '0');\n  const map = {\n    YYYY: d.getFullYear(),\n    MM: pad(d.getMonth() + 1),\n    DD: pad(d.getDate()),\n    HH: pad(d.getHours()),\n    mm: pad(d.getMinutes()),\n    ss: pad(d.getSeconds())\n  };\n  return Object.entries(map).reduce((str, [k, v]) => str.replace(k, v), format);\n}\n\nconsole.log(formatDate(new Date(), 'YYYY/MM/DD HH:mm'));\n",
+    "tags": ["date", "format", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-42",
+    "title": "相対時間（◯分前・◯日前）を表示する",
+    "description": "現在時刻からの差分を見て、人間向けの相対時間表現に変換します。",
+    "language": "JavaScript",
+    "code": "function timeAgo(input) {\n  const date = input instanceof Date ? input : new Date(input);\n  const sec = Math.floor((Date.now() - date.getTime()) / 1000);\n  if (sec < 60) return 'たった今';\n  const min = Math.floor(sec / 60);\n  if (min < 60) return `${min}分前`;\n  const hour = Math.floor(min / 60);\n  if (hour < 24) return `${hour}時間前`;\n  const day = Math.floor(hour / 24);\n  if (day < 7) return `${day}日前`;\n  const week = Math.floor(day / 7);\n  if (week < 5) return `${week}週間前`;\n  const month = Math.floor(day / 30);\n  if (month < 12) return `${month}ヶ月前`;\n  const year = Math.floor(day / 365);\n  return `${year}年前`;\n}\n\nconsole.log(timeAgo(Date.now() - 5 * 60 * 1000));\n",
+    "tags": ["date", "relative-time", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-43",
+    "title": "Intl.DateTimeFormatによるロケール別日付表示",
+    "description": "Intl.DateTimeFormatで日本時間・英語表記などを簡単に切り替えます。",
+    "language": "JavaScript",
+    "code": "function formatInLocale(date, locale = 'ja-JP', options = {}) {\n  const d = date instanceof Date ? date : new Date(date);\n  const formatter = new Intl.DateTimeFormat(locale, {\n    year: 'numeric',\n    month: '2-digit',\n    day: '2-digit',\n    hour: '2-digit',\n    minute: '2-digit',\n    second: '2-digit',\n    ...options\n  });\n  return formatter.format(d);\n}\n\nconsole.log(formatInLocale(new Date(), 'ja-JP'));\nconsole.log(formatInLocale(new Date(), 'en-US', { timeZone: 'UTC' }));\n",
+    "tags": ["intl", "date", "locale"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-44",
+    "title": "数値を3桁区切りでフォーマット",
+    "description": "Intl.NumberFormatを使って数値のカンマ区切りや桁数調整を行います。",
+    "language": "JavaScript",
+    "code": "function formatNumber(num, locale = 'ja-JP', options = {}) {\n  return new Intl.NumberFormat(locale, options).format(num);\n}\n\nconsole.log(formatNumber(1234567.89));\nconsole.log(formatNumber(0.1234, 'ja-JP', { style: 'percent', maximumFractionDigits: 1 }));\n",
+    "tags": ["number", "format", "intl"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-45",
+    "title": "通貨フォーマットユーティリティ",
+    "description": "ユーザーのロケールや通貨コードに応じた金額表示を行います。",
+    "language": "JavaScript",
+    "code": "function formatCurrency(amount, currency = 'JPY', locale = 'ja-JP') {\n  return new Intl.NumberFormat(locale, {\n    style: 'currency',\n    currency\n  }).format(amount);\n}\n\nconsole.log(formatCurrency(1234));\nconsole.log(formatCurrency(19.99, 'USD', 'en-US'));\n",
+    "tags": ["currency", "number", "intl"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-46",
+    "title": "日本語文字列を正しくソートする",
+    "description": "localeCompareを使って、日本語やマルチバイト文字列を自然な順序でソートします。",
+    "language": "JavaScript",
+    "code": "function sortByLocale(arr, locale = 'ja') {\n  return [...arr].sort((a, b) => a.localeCompare(b, locale));\n}\n\nconsole.log(sortByLocale(['あい', 'かき', 'アイ', 'アオ']));\n",
+    "tags": ["sort", "localeCompare", "string"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-47",
+    "title": "簡易UUID v4風ID生成",
+    "description": "crypto.randomUUID がない環境でも使える、そこそこユニークなID生成関数です。",
+    "language": "JavaScript",
+    "code": "function uuidv4() {\n  if (typeof crypto !== 'undefined' && crypto.randomUUID) {\n    return crypto.randomUUID();\n  }\n  const rnd = () => Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0');\n  return `${rnd().slice(0, 8)}-${rnd().slice(0, 4)}-4${rnd().slice(0, 3)}-a${rnd().slice(0, 3)}-${rnd()}`;\n}\n\nconsole.log(uuidv4());\n",
+    "tags": ["uuid", "id", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-48",
+    "title": "連番IDジェネレーター（クロージャ）",
+    "description": "コンポーネントのkeyや一時IDに使える、単純な連番ID生成器です。",
+    "language": "JavaScript",
+    "code": "function createIdGenerator(prefix = 'id-') {\n  let n = 0;\n  return () => `${prefix}${++n}`;\n}\n\nconst nextId = createIdGenerator('user-');\nconsole.log(nextId());\nconsole.log(nextId());\n",
+    "tags": ["id", "closure", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-49",
+    "title": "簡易メールアドレスバリデーション",
+    "description": "HTML標準のルールほど厳密ではないが実用的なメールフォーマットチェックです。",
+    "language": "JavaScript",
+    "code": "function isValidEmail(value) {\n  if (!value) return false;\n  const re = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n  return re.test(value);\n}\n\nconsole.log(isValidEmail('test@example.com'));\nconsole.log(isValidEmail('invalid@@example'));\n",
+    "tags": ["validate", "email", "regex"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-50",
+    "title": "URLの妥当性チェックと正規化",
+    "description": "new URLを使ってURL文字列を検証し、正規化された文字列を返します。",
+    "language": "JavaScript",
+    "code": "function normalizeUrl(value, base = window.location.origin) {\n  try {\n    const url = new URL(value, base);\n    return url.toString();\n  } catch {\n    return null;\n  }\n}\n\nconsole.log(normalizeUrl('https://example.com/test'));\nconsole.log(normalizeUrl('/path/to')); \n",
+    "tags": ["url", "validate", "normalize"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+
+  {
+    "id": "javascript-51",
+    "title": "親子関係を持つ配列からツリー構造を作成",
+    "description": "parentIdを持つフラットな配列から、ネストされたツリーオブジェクトを生成します。",
+    "language": "JavaScript",
+    "code": "function buildTree(list, { idKey = 'id', parentKey = 'parentId', childrenKey = 'children' } = {}) {\n  const map = new Map();\n  const roots = [];\n  list.forEach(item => {\n    map.set(item[idKey], { ...item, [childrenKey]: [] });\n  });\n  map.forEach(node => {\n    if (node[parentKey] == null) {\n      roots.push(node);\n    } else {\n      const parent = map.get(node[parentKey]);\n      parent?.[childrenKey].push(node);\n    }\n  });\n  return roots;\n}\n\nconst data = [\n  { id: 1, name: 'root', parentId: null },\n  { id: 2, name: 'child1', parentId: 1 },\n  { id: 3, name: 'child2', parentId: 1 }\n];\nconsole.log(buildTree(data));\n",
+    "tags": ["tree", "data-structure", "array"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-52",
+    "title": "ツリー構造をDFSで走査するジェネレーター",
+    "description": "再帰的なツリー構造を深さ優先でイテレートするジェネレーター関数です。",
+    "language": "JavaScript",
+    "code": "function* traverseTree(nodes, childrenKey = 'children') {\n  for (const node of nodes) {\n    yield node;\n    const children = node[childrenKey];\n    if (children?.length) {\n      yield* traverseTree(children, childrenKey);\n    }\n  }\n}\n\nconst tree = [\n  { id: 1, children: [{ id: 2 }, { id: 3, children: [{ id: 4 }] }] }\n];\n\nfor (const node of traverseTree(tree)) {\n  console.log(node.id);\n}\n",
+    "tags": ["tree", "generator", "dfs"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-53",
+    "title": "安全にネストした値を取得するget関数",
+    "description": "a.b.c のようなパス文字列から、安全に深いプロパティを参照します。",
+    "language": "JavaScript",
+    "code": "function get(obj, path, defaultValue) {\n  if (!path) return obj;\n  const keys = Array.isArray(path) ? path : String(path).split('.');\n  let cur = obj;\n  for (const key of keys) {\n    if (cur == null || !(key in cur)) return defaultValue;\n    cur = cur[key];\n  }\n  return cur;\n}\n\nconst obj = { a: { b: { c: 1 } } };\nconsole.log(get(obj, 'a.b.c', 0));\nconsole.log(get(obj, 'a.x.c', 'fallback'));\n",
+    "tags": ["object", "get", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-54",
+    "title": "パス指定でオブジェクトに値をセットする",
+    "description": "a.b.c のようなパスでネストしたプロパティを作成・更新します。",
+    "language": "JavaScript",
+    "code": "function set(obj, path, value) {\n  const keys = Array.isArray(path) ? path : String(path).split('.');\n  let cur = obj;\n  keys.forEach((key, index) => {\n    if (index === keys.length - 1) {\n      cur[key] = value;\n    } else {\n      if (typeof cur[key] !== 'object' || cur[key] === null) {\n        cur[key] = {};\n      }\n      cur = cur[key];\n    }\n  });\n  return obj;\n}\n\nconst obj = {};\nset(obj, 'a.b.c', 123);\nconsole.log(obj);\n",
+    "tags": ["object", "set", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-55",
+    "title": "浅いマージと深いマージを切り替えられるオブジェクトマージ",
+    "description": "Object.assignでは足りない、ネストを考慮したマージ処理です。",
+    "language": "JavaScript",
+    "code": "function mergeDeep(target, source) {\n  const output = { ...target };\n  for (const [key, value] of Object.entries(source)) {\n    if (Array.isArray(value)) {\n      output[key] = value.slice();\n    } else if (value && typeof value === 'object') {\n      output[key] = mergeDeep(output[key] || {}, value);\n    } else {\n      output[key] = value;\n    }\n  }\n  return output;\n}\n\nconst a = { a: 1, nested: { x: 1 } };\nconst b = { b: 2, nested: { y: 2 } };\nconsole.log(mergeDeep(a, b));\n",
+    "tags": ["merge", "object", "deep-merge"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-56",
+    "title": "Node風のEventEmitter実装",
+    "description": "on/once/off/emit を持つシンプルなイベントエミッターです。",
+    "language": "JavaScript",
+    "code": "class EventEmitter {\n  constructor() {\n    this._events = new Map();\n  }\n  on(event, listener) {\n    const list = this._events.get(event) || [];\n    list.push(listener);\n    this._events.set(event, list);\n    return this;\n  }\n  once(event, listener) {\n    const wrap = (...args) => {\n      this.off(event, wrap);\n      listener(...args);\n    };\n    return this.on(event, wrap);\n  }\n  off(event, listener) {\n    if (!listener) {\n      this._events.delete(event);\n      return this;\n    }\n    const list = this._events.get(event) || [];\n    this._events.set(event, list.filter(l => l !== listener));\n    return this;\n  }\n  emit(event, ...args) {\n    const list = this._events.get(event) || [];\n    list.forEach(l => l(...args));\n  }\n}\n\nconst bus = new EventEmitter();\nbus.on('ping', msg => console.log('ping:', msg));\nbus.emit('ping', 'hello');\n",
+    "tags": ["event", "emitter", "pubsub"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-57",
+    "title": "同時実行数を制限する非同期キュー",
+    "description": "API呼び出しなどの同時実行数を制御するためのタスクキューです。",
+    "language": "JavaScript",
+    "code": "function createAsyncQueue(limit = 3) {\n  const queue = [];\n  let active = 0;\n\n  const runNext = () => {\n    if (active >= limit) return;\n    const task = queue.shift();\n    if (!task) return;\n    active++;\n    task().finally(() => {\n      active--;\n      runNext();\n    });\n  };\n\n  return function push(taskFn) {\n    return new Promise((resolve, reject) => {\n      queue.push(() => taskFn().then(resolve, reject));\n      runNext();\n    });\n  };\n}\n\nconst enqueue = createAsyncQueue(2);\n\nfor (let i = 1; i <= 5; i++) {\n  enqueue(() => new Promise(r => setTimeout(() => {\n    console.log('task', i);\n    r();\n  }, 1000)));\n}\n",
+    "tags": ["async", "queue", "concurrency"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-58",
+    "title": "Promiseプールで大量タスクを制御",
+    "description": "配列の非同期処理を制限付きのプールで順次実行します。",
+    "language": "JavaScript",
+    "code": "async function promisePool(items, worker, limit = 3) {\n  const results = [];\n  let i = 0;\n  const run = async () => {\n    while (i < items.length) {\n      const current = i++;\n      results[current] = await worker(items[current], current);\n    }\n  };\n  const workers = Array.from({ length: Math.min(limit, items.length) }, run);\n  await Promise.all(workers);\n  return results;\n}\n\npromisePool([1, 2, 3, 4, 5], async (n) => {\n  await new Promise(r => setTimeout(r, 500));\n  return n * 2;\n}, 2).then(console.log);\n",
+    "tags": ["promise", "pool", "async"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-59",
+    "title": "fetchにHTTPステータス別のリトライ処理を追加",
+    "description": "一時的なエラー（5xx）だけリトライするラッパーです。",
+    "language": "JavaScript",
+    "code": "async function fetchWithRetry(url, options = {}, retries = 3) {\n  let lastError;\n  for (let i = 0; i <= retries; i++) {\n    try {\n      const res = await fetch(url, options);\n      if (!res.ok && res.status >= 500 && res.status < 600) {\n        throw new Error(`Server error ${res.status}`);\n      }\n      return res;\n    } catch (e) {\n      lastError = e;\n      if (i === retries) break;\n      await new Promise(r => setTimeout(r, 300 * (i + 1)));\n    }\n  }\n  throw lastError;\n}\n\nfetchWithRetry('/api', {}, 2)\n  .then(r => r.json())\n  .then(console.log)\n  .catch(console.error);\n",
+    "tags": ["fetch", "retry", "http"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-60",
+    "title": "簡易的なリクエストキャンセル管理",
+    "description": "AbortControllerを共通で管理し、同じキーのリクエストをキャンセルします。",
+    "language": "JavaScript",
+    "code": "class RequestManager {\n  constructor() {\n    this.controllers = new Map();\n  }\n  cancel(key) {\n    this.controllers.get(key)?.abort();\n    this.controllers.delete(key);\n  }\n  async fetch(key, url, options = {}) {\n    this.cancel(key);\n    const controller = new AbortController();\n    this.controllers.set(key, controller);\n    try {\n      const res = await fetch(url, { ...options, signal: controller.signal });\n      return res;\n    } finally {\n      this.controllers.delete(key);\n    }\n  }\n}\n\nconst rm = new RequestManager();\nrm.fetch('search', '/api/search?q=a');\nrm.fetch('search', '/api/search?q=ab'); // 最初のリクエストをキャンセル\n",
+    "tags": ["fetch", "abortcontroller", "request-manager"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+
+  {
+    "id": "javascript-61",
+    "title": "WebSocketの自動再接続ラッパー",
+    "description": "接続が切れたら指数バックオフで再接続するWebSocketクライアントです。",
+    "language": "JavaScript",
+    "code": "class ReconnectingWebSocket {\n  constructor(url, protocols) {\n    this.url = url;\n    this.protocols = protocols;\n    this.retries = 0;\n    this.maxRetries = 5;\n    this.listeners = { open: [], message: [], close: [], error: [] };\n    this._connect();\n  }\n  _connect() {\n    const ws = new WebSocket(this.url, this.protocols);\n    this.ws = ws;\n    ws.addEventListener('open', e => {\n      this.retries = 0;\n      this.listeners.open.forEach(l => l(e));\n    });\n    ws.addEventListener('message', e => this.listeners.message.forEach(l => l(e)));\n    ws.addEventListener('close', e => {\n      this.listeners.close.forEach(l => l(e));\n      if (this.retries < this.maxRetries) {\n        const delay = 1000 * 2 ** this.retries++;\n        setTimeout(() => this._connect(), delay);\n      }\n    });\n    ws.addEventListener('error', e => this.listeners.error.forEach(l => l(e)));\n  }\n  on(type, handler) {\n    this.listeners[type]?.push(handler);\n  }\n  send(data) {\n    this.ws?.readyState === WebSocket.OPEN && this.ws.send(data);\n  }\n}\n",
+    "tags": ["websocket", "reconnect", "network"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-62",
+    "title": "Server-Sent Events(SSE)の受信ユーティリティ",
+    "description": "EventSourceをラップしてメッセージイベントを扱いやすくします。",
+    "language": "JavaScript",
+    "code": "function connectSSE(url, { onMessage, onError, onOpen } = {}) {\n  const es = new EventSource(url);\n  es.onopen = (e) => onOpen?.(e);\n  es.onerror = (e) => onError?.(e);\n  es.onmessage = (e) => {\n    try {\n      const data = JSON.parse(e.data);\n      onMessage?.(data, e);\n    } catch {\n      onMessage?.(e.data, e);\n    }\n  };\n  return () => es.close();\n}\n\nconst disconnect = connectSSE('/events', {\n  onMessage: (data) => console.log('event:', data)\n});\n",
+    "tags": ["sse", "EventSource", "realtime"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-63",
+    "title": "IndexedDBのシンプルラッパー（Key-Valueストア）",
+    "description": "小さなアプリケーション用にIndexedDBをPromiseベースでラップします。",
+    "language": "JavaScript",
+    "code": "function openKvDb(name = 'kv', storeName = 'store') {\n  return new Promise((resolve, reject) => {\n    const req = indexedDB.open(name, 1);\n    req.onupgradeneeded = () => {\n      const db = req.result;\n      if (!db.objectStoreNames.contains(storeName)) {\n        db.createObjectStore(storeName);\n      }\n    };\n    req.onsuccess = () => {\n      const db = req.result;\n      const getStore = (mode) => db.transaction(storeName, mode).objectStore(storeName);\n      resolve({\n        get(key) {\n          return new Promise((res, rej) => {\n            const r = getStore('readonly').get(key);\n            r.onsuccess = () => res(r.result);\n            r.onerror = () => rej(r.error);\n          });\n        },\n        set(key, value) {\n          return new Promise((res, rej) => {\n            const r = getStore('readwrite').put(value, key);\n            r.onsuccess = () => res();\n            r.onerror = () => rej(r.error);\n          });\n        }\n      });\n    };\n    req.onerror = () => reject(req.error);\n  });\n}\n\n// 使用例\n// const db = await openKvDb();\n// await db.set('key', { value: 1 });\n// console.log(await db.get('key'));\n",
+    "tags": ["indexeddb", "storage", "kv-store"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-64",
+    "title": "BroadcastChannelでタブ間通信",
+    "description": "同一オリジンの別タブとメッセージをやり取りするユーティリティです。",
+    "language": "JavaScript",
+    "code": "function createTabChannel(name = 'app-channel') {\n  const bc = new BroadcastChannel(name);\n  return {\n    post(type, payload) {\n      bc.postMessage({ type, payload });\n    },\n    on(type, handler) {\n      bc.addEventListener('message', (e) => {\n        if (e.data?.type === type) handler(e.data.payload, e);\n      });\n    },\n    close() {\n      bc.close();\n    }\n  };\n}\n\nconst channel = createTabChannel();\nchannel.on('ping', (msg) => console.log('other tab says:', msg));\n",
+    "tags": ["BroadcastChannel", "tab", "communication"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-65",
+    "title": "History APIでSPA風のナビゲーションを実装",
+    "description": "pushStateとpopstateイベントを使って、シンプルなルーターを作ります。",
+    "language": "JavaScript",
+    "code": "class Router {\n  constructor() {\n    this.routes = new Map();\n    window.addEventListener('popstate', () => this._render(location.pathname));\n  }\n  add(path, handler) {\n    this.routes.set(path, handler);\n  }\n  navigate(path) {\n    history.pushState(null, '', path);\n    this._render(path);\n  }\n  _render(path) {\n    const handler = this.routes.get(path) || this.routes.get('*');\n    handler?.(path);\n  }\n}\n\nconst router = new Router();\nrouter.add('/', () => console.log('home'));\nrouter.add('/about', () => console.log('about'));\nrouter.add('*', (p) => console.log('404', p));\n\n// router.navigate('/about');\n",
+    "tags": ["history", "spa", "router"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-66",
+    "title": "URLハッシュを使ったシンプルタブ切り替え",
+    "description": "#tab=profile のようなハッシュパラメータでタブ表示を切り替えます。",
+    "language": "JavaScript",
+    "code": "function getHashParams() {\n  const hash = location.hash.slice(1);\n  const params = new URLSearchParams(hash);\n  return Object.fromEntries(params.entries());\n}\n\nfunction setupHashTabs() {\n  const tabs = document.querySelectorAll('[data-tab]');\n  const show = (name) => {\n    tabs.forEach(t => {\n      t.hidden = t.dataset.tab !== name;\n    });\n  };\n  const applyFromHash = () => {\n    const { tab } = getHashParams();\n    if (tab) show(tab);\n  };\n  window.addEventListener('hashchange', applyFromHash);\n  applyFromHash();\n}\n\nsetupHashTabs();\n",
+    "tags": ["hash", "tab", "ui"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-67",
+    "title": "ドラッグ＆ドロップでファイルを受け取る",
+    "description": "dropエリアにドラッグされたファイルを取得する処理です。",
+    "language": "JavaScript",
+    "code": "function setupDropArea(el, onFiles) {\n  const prevent = (e) => {\n    e.preventDefault();\n    e.stopPropagation();\n  };\n  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {\n    el.addEventListener(ev, prevent);\n  });\n  el.addEventListener('drop', (e) => {\n    const files = [...e.dataTransfer.files];\n    onFiles(files);\n  });\n}\n\nsetupDropArea(document.querySelector('#drop'), (files) => {\n  console.log('dropped files:', files);\n});\n",
+    "tags": ["drag-and-drop", "file", "ui"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-68",
+    "title": "URLからファイルをダウンロードして保存",
+    "description": "fetchで取得したBlobをファイルとして保存します。",
+    "language": "JavaScript",
+    "code": "async function downloadFileFromUrl(url, filename) {\n  const res = await fetch(url);\n  if (!res.ok) throw new Error('Download failed');\n  const blob = await res.blob();\n  const link = document.createElement('a');\n  const objectUrl = URL.createObjectURL(blob);\n  link.href = objectUrl;\n  link.download = filename || url.split('/').pop() || 'download';\n  link.click();\n  URL.revokeObjectURL(objectUrl);\n}\n\n// downloadFileFromUrl('/files/report.pdf', 'report.pdf');\n",
+    "tags": ["download", "blob", "fetch"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-69",
+    "title": "Canvasにテキストウォーターマークを描画",
+    "description": "画像の上に簡易的な透かし文字を追加するサンプルです。",
+    "language": "JavaScript",
+    "code": "async function drawWatermark(imgUrl, text) {\n  const img = new Image();\n  img.crossOrigin = 'anonymous';\n  img.src = imgUrl;\n  await img.decode();\n  const canvas = document.createElement('canvas');\n  canvas.width = img.width;\n  canvas.height = img.height;\n  const ctx = canvas.getContext('2d');\n  ctx.drawImage(img, 0, 0);\n  ctx.font = '32px sans-serif';\n  ctx.fillStyle = 'rgba(255,255,255,0.7)';\n  ctx.textAlign = 'right';\n  ctx.textBaseline = 'bottom';\n  ctx.fillText(text, canvas.width - 10, canvas.height - 10);\n  return canvas.toDataURL('image/png');\n}\n\n// drawWatermark('/img/photo.jpg', 'SAMPLE');\n",
+    "tags": ["canvas", "image", "watermark"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-70",
+    "title": "requestAnimationFrameでシンプルなアニメーション",
+    "description": "DOM要素を滑らかに移動させるアニメーションループです。",
+    "language": "JavaScript",
+    "code": "function animate(el, duration = 1000) {\n  const start = performance.now();\n  const from = 0;\n  const to = 300;\n  const frame = (now) => {\n    const t = Math.min(1, (now - start) / duration);\n    const eased = t * (2 - t); // ease-out\n    el.style.transform = `translateX(${from + (to - from) * eased}px)`;\n    if (t < 1) requestAnimationFrame(frame);\n  };\n  requestAnimationFrame(frame);\n}\n\nanimate(document.querySelector('#box'));\n",
+    "tags": ["animation", "requestAnimationFrame", "ui"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+
+  {
+    "id": "javascript-71",
+    "title": "MutationObserverでDOM変化を監視",
+    "description": "指定要素以下のDOMツリーの変更を監視します。",
+    "language": "JavaScript",
+    "code": "function observeDom(el, callback) {\n  const mo = new MutationObserver((mutations) => callback(mutations));\n  mo.observe(el, { childList: true, subtree: true, attributes: true });\n  return () => mo.disconnect();\n}\n\nconst stop = observeDom(document.body, (mutations) => {\n  console.log('mutations:', mutations);\n});\n\n// stop(); で解除\n",
+    "tags": ["MutationObserver", "dom", "observe"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-72",
+    "title": "スクロール位置に応じてヘッダーにクラス付与",
+    "description": "スクロールが一定量を超えたらヘッダーを縮小表示するなどのUI制御です。",
+    "language": "JavaScript",
+    "code": "function shrinkHeaderOnScroll(selector = 'header', threshold = 80) {\n  const header = document.querySelector(selector);\n  if (!header) return;\n  const onScroll = () => {\n    header.classList.toggle('is-scrolled', window.scrollY > threshold);\n  };\n  window.addEventListener('scroll', onScroll, { passive: true });\n  onScroll();\n}\n\nshrinkHeaderOnScroll();\n",
+    "tags": ["scroll", "header", "ui"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-73",
+    "title": "ページの読み込み進捗を表示するフェイクローダー",
+    "description": "実際の処理と無関係に、UX向上のためのプログレスバーを表示します。",
+    "language": "JavaScript",
+    "code": "function createFakeLoader(el) {\n  let value = 0;\n  const timer = setInterval(() => {\n    value += (100 - value) * 0.1;\n    el.style.width = `${value}%`;\n    if (value > 99) {\n      clearInterval(timer);\n      el.style.width = '100%';\n      el.classList.add('is-complete');\n    }\n  }, 200);\n  return () => clearInterval(timer);\n}\n\n// createFakeLoader(document.querySelector('.loader-bar'));\n",
+    "tags": ["loader", "progress", "ui"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-74",
+    "title": "Fetch + AbortControllerで検索入力のオートコンプリート",
+    "description": "タイプのたびに古いリクエストをキャンセルし、新しい結果だけを反映します。",
+    "language": "JavaScript",
+    "code": "function setupAutocomplete(inputSelector, listSelector, fetcher) {\n  const input = document.querySelector(inputSelector);\n  const list = document.querySelector(listSelector);\n  let controller;\n  input.addEventListener('input', async () => {\n    const q = input.value.trim();\n    if (!q) {\n      list.innerHTML = '';\n      return;\n    }\n    controller?.abort();\n    controller = new AbortController();\n    try {\n      const items = await fetcher(q, controller.signal);\n      list.innerHTML = items.map(i => `<li>${i}</li>`).join('');\n    } catch (e) {\n      if (e.name !== 'AbortError') console.error(e);\n    }\n  });\n}\n\n// setupAutocomplete('#search', '#list', async (q, signal) => {...});\n",
+    "tags": ["autocomplete", "fetch", "abortcontroller"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-75",
+    "title": "スナックバー風トーストメッセージ表示",
+    "description": "一定時間で自動的に消える通知メッセージを画面下に表示します。",
+    "language": "JavaScript",
+    "code": "function showToast(message, { timeout = 3000 } = {}) {\n  const toast = document.createElement('div');\n  toast.className = 'toast';\n  toast.textContent = message;\n  document.body.appendChild(toast);\n  requestAnimationFrame(() => toast.classList.add('is-visible'));\n  setTimeout(() => {\n    toast.classList.remove('is-visible');\n    toast.addEventListener('transitionend', () => toast.remove(), { once: true });\n  }, timeout);\n}\n\n// showToast('保存しました');\n",
+    "tags": ["toast", "notification", "ui"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-76",
+    "title": "簡易モーダルダイアログ",
+    "description": "背景クリックで閉じられるモーダルウィンドウを生成します。",
+    "language": "JavaScript",
+    "code": "function openModal(contentHtml) {\n  const overlay = document.createElement('div');\n  overlay.className = 'modal-overlay';\n  overlay.innerHTML = `<div class=\"modal\">${contentHtml}</div>`;\n  overlay.addEventListener('click', (e) => {\n    if (e.target === overlay) close();\n  });\n  function close() {\n    overlay.classList.remove('is-open');\n    overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });\n  }\n  document.body.appendChild(overlay);\n  requestAnimationFrame(() => overlay.classList.add('is-open'));\n  return { close };\n}\n\n// const modal = openModal('<p>内容</p>');\n// modal.close();\n",
+    "tags": ["modal", "dialog", "ui"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-77",
+    "title": "アクセシブルなトグルメニュー",
+    "description": "aria-expanded属性を管理しつつ、メニューの開閉を制御します。",
+    "language": "JavaScript",
+    "code": "function setupToggleMenu(buttonSelector, menuSelector) {\n  const btn = document.querySelector(buttonSelector);\n  const menu = document.querySelector(menuSelector);\n  const toggle = () => {\n    const expanded = btn.getAttribute('aria-expanded') === 'true';\n    btn.setAttribute('aria-expanded', String(!expanded));\n    menu.hidden = expanded;\n  };\n  btn.addEventListener('click', toggle);\n  document.addEventListener('click', (e) => {\n    if (!menu.contains(e.target) && e.target !== btn) {\n      btn.setAttribute('aria-expanded', 'false');\n      menu.hidden = true;\n    }\n  });\n}\n\nsetupToggleMenu('#menuButton', '#menu');\n",
+    "tags": ["a11y", "menu", "toggle"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-78",
+    "title": "レスポンシブなメディアクエリリスナー",
+    "description": "画面幅に応じた処理をJS側で切り替えるためのヘルパーです。",
+    "language": "JavaScript",
+    "code": "function onMediaQuery(query, callback) {\n  const mql = window.matchMedia(query);\n  const handler = (e) => callback(e.matches, e);\n  mql.addEventListener('change', handler);\n  handler(mql);\n  return () => mql.removeEventListener('change', handler);\n}\n\nonMediaQuery('(max-width: 768px)', (isSp) => {\n  console.log(isSp ? 'SP' : 'PC');\n});\n",
+    "tags": ["matchMedia", "responsive", "ui"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-79",
+    "title": "ブラウザ機能のサポート判定ユーティリティ",
+    "description": "特定APIが利用可能かどうかを簡単にチェックします。",
+    "language": "JavaScript",
+    "code": "function isSupported(path) {\n  const parts = path.split('.');\n  let cur = window;\n  for (const p of parts) {\n    cur = cur?.[p];\n    if (cur == null) return false;\n  }\n  return true;\n}\n\nconsole.log('Clipboard API:', isSupported('navigator.clipboard.writeText'));\nconsole.log('ServiceWorker:', isSupported('navigator.serviceWorker'));\n",
+    "tags": ["feature-detect", "browser", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-80",
+    "title": "Service Workerの登録と更新検知",
+    "description": "登録済みService Workerの更新があった場合に通知します。",
+    "language": "JavaScript",
+    "code": "async function registerServiceWorker(scriptUrl = '/sw.js') {\n  if (!('serviceWorker' in navigator)) return null;\n  const reg = await navigator.serviceWorker.register(scriptUrl);\n  reg.addEventListener('updatefound', () => {\n    const sw = reg.installing;\n    sw?.addEventListener('statechange', () => {\n      if (sw.state === 'installed' && navigator.serviceWorker.controller) {\n        console.log('新しいバージョンのService Workerがインストールされました');\n      }\n    });\n  });\n  return reg;\n}\n\n// registerServiceWorker();\n",
+    "tags": ["service-worker", "pwa", "offline"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+
+  {
+    "id": "javascript-81",
+    "title": "Navigator.shareでネイティブ共有シートを開く",
+    "description": "対応ブラウザで共有シートを表示し、未対応の場合はフォールバックします。",
+    "language": "JavaScript",
+    "code": "async function sharePage({ title, text, url } = {}) {\n  if (navigator.share) {\n    await navigator.share({\n      title: title || document.title,\n      text: text || '',\n      url: url || location.href\n    });\n  } else {\n    await navigator.clipboard?.writeText(url || location.href);\n    alert('URLをコピーしました');\n  }\n}\n\n// sharePage();\n",
+    "tags": ["share", "clipboard", "mobile"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-82",
+    "title": "URLのパラメータを更新して履歴に反映",
+    "description": "ページをリロードせずにクエリパラメータを書き換えます。",
+    "language": "JavaScript",
+    "code": "function updateQueryParams(patch) {\n  const url = new URL(location.href);\n  Object.entries(patch).forEach(([k, v]) => {\n    if (v == null || v === '') url.searchParams.delete(k);\n    else url.searchParams.set(k, v);\n  });\n  history.replaceState(null, '', url.toString());\n}\n\nupdateQueryParams({ page: 2, q: 'test' });\n",
+    "tags": ["url", "query", "history"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-83",
+    "title": "配列を指定キーでソートする汎用ユーティリティ",
+    "description": "昇順・降順やキー関数を指定してソートできます。",
+    "language": "JavaScript",
+    "code": "function sortBy(arr, selector, { desc = false } = {}) {\n  const get = typeof selector === 'function' ? selector : (x) => x[selector];\n  return [...arr].sort((a, b) => {\n    const va = get(a);\n    const vb = get(b);\n    if (va < vb) return desc ? 1 : -1;\n    if (va > vb) return desc ? -1 : 1;\n    return 0;\n  });\n}\n\nconst items = [{ name: 'b' }, { name: 'a' }];\nconsole.log(sortBy(items, 'name'));\n",
+    "tags": ["sort", "array", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-84",
+    "title": "配列のシャッフル（Fisher-Yates）",
+    "description": "ランダムに順番を入れ替えるシャッフル関数です。",
+    "language": "JavaScript",
+    "code": "function shuffle(array) {\n  const arr = array.slice();\n  for (let i = arr.length - 1; i > 0; i--) {\n    const j = Math.floor(Math.random() * (i + 1));\n    [arr[i], arr[j]] = [arr[j], arr[i]];\n  }\n  return arr;\n}\n\nconsole.log(shuffle([1, 2, 3, 4, 5]));\n",
+    "tags": ["shuffle", "array", "random"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-85",
+    "title": "配列をページングするユーティリティ",
+    "description": "ページ番号とページサイズから、対象ページの要素を取り出します。",
+    "language": "JavaScript",
+    "code": "function paginate(array, page = 1, perPage = 10) {\n  const total = array.length;\n  const pages = Math.max(1, Math.ceil(total / perPage));\n  const current = Math.min(Math.max(1, page), pages);\n  const start = (current - 1) * perPage;\n  const items = array.slice(start, start + perPage);\n  return { items, total, pages, current };\n}\n\nconsole.log(paginate([1,2,3,4,5], 2, 2));\n",
+    "tags": ["paginate", "array", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-86",
+    "title": "配列差集合・積集合・和集合",
+    "description": "Setを使って配列の集合演算を行う小さなヘルパーです。",
+    "language": "JavaScript",
+    "code": "const setUtil = {\n  union(a, b) {\n    return [...new Set([...a, ...b])];\n  },\n  intersect(a, b) {\n    const s = new Set(b);\n    return a.filter(x => s.has(x));\n  },\n  difference(a, b) {\n    const s = new Set(b);\n    return a.filter(x => !s.has(x));\n  }\n};\n\nconsole.log(setUtil.union([1,2], [2,3]));\nconsole.log(setUtil.intersect([1,2], [2,3]));\nconsole.log(setUtil.difference([1,2,3], [2]));\n",
+    "tags": ["set", "array", "math"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-87",
+    "title": "テキストのスラッグ化（URLフレンドリー変換）",
+    "description": "タイトル文字列をURLに使いやすいスラッグへ変換します。",
+    "language": "JavaScript",
+    "code": "function slugify(text) {\n  return text\n    .toString()\n    .normalize('NFKD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .replace(/[^a-zA-Z0-9\\s-]/g, '')\n    .trim()\n    .replace(/\\s+/g, '-')\n    .replace(/-+/g, '-')\n    .toLowerCase();\n}\n\nconsole.log(slugify('こんにちは World! 2025'));\n",
+    "tags": ["slug", "string", "url"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-88",
+    "title": "テンプレート文字列の簡易置換エンジン",
+    "description": "{{name}} 形式のプレースホルダをオブジェクトで埋めます。",
+    "language": "JavaScript",
+    "code": "function renderTemplate(template, params) {\n  return template.replace(/{{\\s*(\\w+)\\s*}}/g, (_, key) => {\n    return key in params ? params[key] : '';\n  });\n}\n\nconsole.log(renderTemplate('こんにちは {{ name }} さん', { name: '太郎' }));\n",
+    "tags": ["template", "string", "render"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-89",
+    "title": "小数の丸め（切り上げ・切り捨て・四捨五入）",
+    "description": "誤差を避けつつ指定桁で丸めるヘルパーです。",
+    "language": "JavaScript",
+    "code": "const roundUtil = {\n  round(num, digits = 2) {\n    const p = 10 ** digits;\n    return Math.round(num * p) / p;\n  },\n  ceil(num, digits = 2) {\n    const p = 10 ** digits;\n    return Math.ceil(num * p) / p;\n  },\n  floor(num, digits = 2) {\n    const p = 10 ** digits;\n    return Math.floor(num * p) / p;\n  }\n};\n\nconsole.log(roundUtil.round(1.2345, 2));\n",
+    "tags": ["round", "math", "number"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-90",
+    "title": "ランダムな要素・サブセットを取得",
+    "description": "配列からランダムに1件、または複数件を取得します。",
+    "language": "JavaScript",
+    "code": "function sample(array) {\n  return array[Math.floor(Math.random() * array.length)];\n}\n\nfunction sampleSize(array, size = 1) {\n  return shuffle(array).slice(0, size);\n}\n\nconsole.log(sample([1,2,3,4]));\nconsole.log(sampleSize([1,2,3,4,5], 3));\n",
+    "tags": ["random", "array", "sample"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+
+  {
+    "id": "javascript-91",
+    "title": "Node.js: fs/promisesでJSON設定ファイルを読み書き",
+    "description": "設定オブジェクトをconfig.jsonに保存・読み込みするユーティリティです。",
+    "language": "JavaScript",
+    "code": "import { readFile, writeFile } from 'node:fs/promises';\n\nexport async function readJson(path, fallback = null) {\n  try {\n    const text = await readFile(path, 'utf8');\n    return JSON.parse(text);\n  } catch {\n    return fallback;\n  }\n}\n\nexport async function writeJson(path, data) {\n  const text = JSON.stringify(data, null, 2);\n  await writeFile(path, text, 'utf8');\n}\n",
+    "tags": ["node", "fs", "json"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-92",
+    "title": "Node.js: 簡易CLI引数パーサ",
+    "description": "process.argvから--key=value形式の引数をパースします。",
+    "language": "JavaScript",
+    "code": "export function parseArgs(argv = process.argv.slice(2)) {\n  const args = {};\n  for (const arg of argv) {\n    if (arg.startsWith('--')) {\n      const [k, v = true] = arg.slice(2).split('=');\n      args[k] = v === 'true' ? true : v === 'false' ? false : v;\n    }\n  }\n  return args;\n}\n\n// node script.js --env=dev --watch=true\n// console.log(parseArgs());\n",
+    "tags": ["node", "cli", "argv"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-93",
+    "title": "Node.js: .envファイルの読み込み",
+    "description": ".envファイルを読み込んでprocess.envにマージします（最低限版）。",
+    "language": "JavaScript",
+    "code": "import { readFile } from 'node:fs/promises';\n\nexport async function loadEnv(path = '.env') {\n  try {\n    const text = await readFile(path, 'utf8');\n    text.split(/\\r?\\n/).forEach((line) => {\n      const m = line.match(/^([A-Z0-9_]+)=(.*)$/i);\n      if (!m) return;\n      const [, key, value] = m;\n      if (!(key in process.env)) {\n        process.env[key] = value;\n      }\n    });\n  } catch {\n    // ignore\n  }\n}\n",
+    "tags": ["node", "env", "config"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-94",
+    "title": "Node.js: 簡易HTTPサーバ（静的ファイル配信）",
+    "description": "httpモジュールでディレクトリ内の静的ファイルを返します。",
+    "language": "JavaScript",
+    "code": "import http from 'node:http';\nimport { readFile } from 'node:fs/promises';\nimport { join } from 'node:path';\n\nconst publicDir = join(process.cwd(), 'public');\n\nconst server = http.createServer(async (req, res) => {\n  const url = req.url === '/' ? '/index.html' : req.url;\n  const filePath = join(publicDir, url);\n  try {\n    const body = await readFile(filePath);\n    res.writeHead(200);\n    res.end(body);\n  } catch {\n    res.writeHead(404);\n    res.end('Not found');\n  }\n});\n\nserver.listen(3000, () => console.log('http://localhost:3000'));\n",
+    "tags": ["node", "http", "static-server"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-95",
+    "title": "Node.js: fetchを使ったAPIクライアント",
+    "description": "ベースURLと共通ヘッダーを持ったAPIクライアントクラスです。",
+    "language": "JavaScript",
+    "code": "export class ApiClient {\n  constructor(baseUrl, defaultHeaders = {}) {\n    this.baseUrl = baseUrl.replace(/\\/$/, '');\n    this.defaultHeaders = defaultHeaders;\n  }\n  async request(path, { method = 'GET', headers, body } = {}) {\n    const res = await fetch(this.baseUrl + path, {\n      method,\n      headers: { 'Content-Type': 'application/json', ...this.defaultHeaders, ...headers },\n      body: body ? JSON.stringify(body) : undefined\n    });\n    if (!res.ok) throw new Error(`HTTP ${res.status}`);\n    return res.json();\n  }\n}\n",
+    "tags": ["node", "fetch", "api-client"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-96",
+    "title": "Node.js: タスクを定期実行するスケジューラ",
+    "description": "setIntervalをラップして開始・停止・即時実行を管理します。",
+    "language": "JavaScript",
+    "code": "export function createScheduler(fn, intervalMs) {\n  let id = null;\n  const start = () => {\n    if (id != null) return;\n    id = setInterval(fn, intervalMs);\n  };\n  const stop = () => {\n    if (id != null) clearInterval(id);\n    id = null;\n  };\n  const runNow = () => fn();\n  return { start, stop, runNow };\n}\n\n// const job = createScheduler(() => console.log('tick'), 1000);\n",
+    "tags": ["node", "scheduler", "interval"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-97",
+    "title": "Node.js: ローテーションしない超簡易ログファイル出力",
+    "description": "日付付きで1行に1ログを追記していきます。",
+    "language": "JavaScript",
+    "code": "import { appendFile } from 'node:fs/promises';\n\nexport async function logToFile(path, level, message, meta = {}) {\n  const time = new Date().toISOString();\n  const line = JSON.stringify({ time, level, message, meta }) + '\\n';\n  await appendFile(path, line, 'utf8');\n}\n\n// await logToFile('app.log', 'info', 'started');\n",
+    "tags": ["node", "log", "file"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-98",
+    "title": "Node.js: シグナルを捕捉して優雅に終了",
+    "description": "SIGINT/SIGTERMを受け取ったらクリーンアップしてから終了します。",
+    "language": "JavaScript",
+    "code": "export function setupGracefulShutdown(cleanup) {\n  const handler = async (signal) => {\n    console.log('Received', signal);\n    try {\n      await cleanup();\n    } finally {\n      process.exit(0);\n    }\n  };\n  process.on('SIGINT', () => handler('SIGINT'));\n  process.on('SIGTERM', () => handler('SIGTERM'));\n}\n\n// setupGracefulShutdown(async () => { console.log('cleanup'); });\n",
+    "tags": ["node", "signal", "graceful-shutdown"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-99",
+    "title": "ブラウザ・Node両対応の環境判定ユーティリティ",
+    "description": "コードがブラウザで動いているかNodeで動いているかを判定します。",
+    "language": "JavaScript",
+    "code": "export const env = {\n  isBrowser: typeof window !== 'undefined' && typeof document !== 'undefined',\n  isNode: typeof process !== 'undefined' && process.versions?.node,\n  isDeno: typeof Deno !== 'undefined' && !!Deno.version?.deno\n};\n\nconsole.log(env);\n",
+    "tags": ["env", "isBrowser", "isNode"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  },
+  {
+    "id": "javascript-100",
+    "title": "ブラウザ・Node共通のsleep関数",
+    "description": "Promiseベースで待機するsleepユーティリティ。テストやリトライ処理に便利です。",
+    "language": "JavaScript",
+    "code": "export function sleep(ms) {\n  return new Promise(resolve => setTimeout(resolve, ms));\n}\n\nasync function demo() {\n  console.log('wait...');\n  await sleep(1000);\n  console.log('done');\n}\n\n// demo();\n",
+    "tags": ["sleep", "async", "utility"],
+    "created_at": "2025-12-06 00:00:00",
+    "updated_at": "2025-12-06 00:00:00"
+  }
+]
+

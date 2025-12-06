@@ -1,0 +1,1002 @@
+[
+  {
+    "id": "gas-spread-001",
+    "title": "指定範囲を2次元配列として取得する",
+    "description": "シート「データ」のA1:C10を2次元配列として取得してログ出力します。",
+    "language": "gas",
+    "code": "function getValuesAsArray(){const ss=SpreadsheetApp.getActiveSpreadsheet();const sheet=ss.getSheetByName('データ');const range=sheet.getRange('A1:C10');const values=range.getValues();Logger.log(values);}",
+    "tags": ["spreadsheet","read","range","values"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-002",
+    "title": "指定範囲に2次元配列を書き込む",
+    "description": "配列をA1セルから書き込みます。大きさは配列に合わせて自動で展開されます。",
+    "language": "gas",
+    "code": "function setValuesFromArray(){const ss=SpreadsheetApp.getActiveSpreadsheet();const sheet=ss.getSheetByName('データ');const values=[[1,'A'],[2,'B'],[3,'C']];sheet.getRange(1,1,values.length,values[0].length).setValues(values);}",
+    "tags": ["spreadsheet","write","range","values"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-003",
+    "title": "末尾に1行追加（appendRow）",
+    "description": "シートの最後の行の下に1行データを追加します。",
+    "language": "gas",
+    "code": "function appendRowSample(){const ss=SpreadsheetApp.getActiveSpreadsheet();const sheet=ss.getSheetByName('ログ');sheet.appendRow([new Date(),'処理完了','OK']);}",
+    "tags": ["spreadsheet","append","row","log"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-004",
+    "title": "データが入っている最終行を取得する",
+    "description": "A列の最終行番号を取得してログに出力します。",
+    "language": "gas",
+    "code": "function getLastRowInColumnA(){const sheet=SpreadsheetApp.getActiveSheet();const lastRow=sheet.getRange('A:A').getValues().filter(String).length;Logger.log(lastRow);}",
+    "tags": ["spreadsheet","lastRow","utility"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-005",
+    "title": "シート全体の内容をクリアする",
+    "description": "アクティブシートの値と書式をすべてクリアします。",
+    "language": "gas",
+    "code": "function clearSheetAll(){const sheet=SpreadsheetApp.getActiveSheet();sheet.clear();}",
+    "tags": ["spreadsheet","clear","format","values"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-006",
+    "title": "値だけクリアして書式は残す",
+    "description": "指定範囲の値のみをクリアし、色や罫線などの書式は残します。",
+    "language": "gas",
+    "code": "function clearContentsOnly(){const sheet=SpreadsheetApp.getActiveSheet();sheet.getRange('A2:D100').clearContent();}",
+    "tags": ["spreadsheet","clear","values","range"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-007",
+    "title": "書式だけクリアして値は残す",
+    "description": "指定範囲の書式のみをクリアして、値はそのまま残します。",
+    "language": "gas",
+    "code": "function clearFormatOnly(){const sheet=SpreadsheetApp.getActiveSheet();sheet.getRange('A1:D10').clearFormat();}",
+    "tags": ["spreadsheet","clear","format","range"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-008",
+    "title": "シートを複製する",
+    "description": "アクティブシートを同一スプレッドシート内にコピーして名前を変更します。",
+    "language": "gas",
+    "code": "function duplicateSheet(){const ss=SpreadsheetApp.getActiveSpreadsheet();const sheet=ss.getActiveSheet();const copy=sheet.copyTo(ss);copy.setName(sheet.getName()+'コピー');}",
+    "tags": ["spreadsheet","sheet","copy","duplicate"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-009",
+    "title": "別のスプレッドシートへシートをコピーする",
+    "description": "現在のシートを別ファイル（ID指定）のスプレッドシートへコピーします。",
+    "language": "gas",
+    "code": "function copySheetToAnotherFile(){const sourceSs=SpreadsheetApp.getActiveSpreadsheet();const sheet=sourceSs.getActiveSheet();const targetSs=SpreadsheetApp.openById('他ファイルのスプレッドシートID');sheet.copyTo(targetSs).setName(sheet.getName());}",
+    "tags": ["spreadsheet","copy","external","sheet"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-010",
+    "title": "アクティブセルのアドレスと値を取得",
+    "description": "アクティブセルのA1表記と値をログに出力します。",
+    "language": "gas",
+    "code": "function logActiveCell(){const sheet=SpreadsheetApp.getActiveSheet();const cell=sheet.getActiveCell();Logger.log(cell.getA1Notation()+': '+cell.getValue());}",
+    "tags": ["spreadsheet","activeCell","log"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-011",
+    "title": "全行をループして処理する",
+    "description": "1行目をヘッダーとして2行目以降をループし、A列の値をログに出力します。",
+    "language": "gas",
+    "code": "function loopRows(){const sheet=SpreadsheetApp.getActiveSheet();const lastRow=sheet.getLastRow();for(let r=2;r<=lastRow;r++){const v=sheet.getRange(r,1).getValue();Logger.log(r+': '+v);}}",
+    "tags": ["spreadsheet","loop","rows"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-012",
+    "title": "条件一致行を検索してハイライト",
+    "description": "B列が「完了」の行を黄色にハイライトします。",
+    "language": "gas",
+    "code": "function highlightCompleted(){const sheet=SpreadsheetApp.getActiveSheet();const lastRow=sheet.getLastRow();for(let r=2;r<=lastRow;r++){if(sheet.getRange(r,2).getValue()==='完了'){sheet.getRange(r,1,1,sheet.getLastColumn()).setBackground('#fff59d');}}}",
+    "tags": ["spreadsheet","search","highlight","condition"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-013",
+    "title": "TextFinderで値を検索",
+    "description": "シート全体から指定文字列を検索し、見つかったセルのアドレスをログ出力します。",
+    "language": "gas",
+    "code": "function findTextAddresses(){const sheet=SpreadsheetApp.getActiveSheet();const finder=sheet.createTextFinder('検索文字');const matches=finder.findAll();matches.forEach(c=>Logger.log(c.getA1Notation()));}",
+    "tags": ["spreadsheet","TextFinder","search"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-014",
+    "title": "TextFinderで一括置換",
+    "description": "シート内の「旧値」を「新値」に一括置換します。",
+    "language": "gas",
+    "code": "function replaceTextAll(){const sheet=SpreadsheetApp.getActiveSheet();sheet.createTextFinder('旧値').replaceAllWith('新値');}",
+    "tags": ["spreadsheet","TextFinder","replace"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-015",
+    "title": "A列の重複行を削除",
+    "description": "A列の値をキーとして重複行（2回目以降）を削除します。",
+    "language": "gas",
+    "code": "function removeDuplicateRowsByA(){const sheet=SpreadsheetApp.getActiveSheet();const lastRow=sheet.getLastRow();const seen={};for(let r=lastRow;r>=2;r--){const v=sheet.getRange(r,1).getValue();if(seen[v]){sheet.deleteRow(r);}else{seen[v]=true;}}}",
+    "tags": ["spreadsheet","duplicate","remove","rows"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-016",
+    "title": "空行をまとめて削除",
+    "description": "A列が空の行を下から順に削除します。",
+    "language": "gas",
+    "code": "function removeEmptyRowsByA(){const sheet=SpreadsheetApp.getActiveSheet();const lastRow=sheet.getLastRow();for(let r=lastRow;r>=2;r--){if(sheet.getRange(r,1).getValue()===''){sheet.deleteRow(r);}}}",
+    "tags": ["spreadsheet","empty","rows","cleanup"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-017",
+    "title": "指定列でシートをソートする",
+    "description": "B列（2列目）を昇順でシート全体をソートします。",
+    "language": "gas",
+    "code": "function sortByColumnB(){const sheet=SpreadsheetApp.getActiveSheet();const range=sheet.getDataRange();range.sort({column:2,ascending:true});}",
+    "tags": ["spreadsheet","sort","column"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-018",
+    "title": "条件に合う行を別シートへコピー",
+    "description": "ステータス列（C列）が「完了」の行を「完了」シートへコピーします。",
+    "language": "gas",
+    "code": "function moveCompletedRows(){const ss=SpreadsheetApp.getActiveSpreadsheet();const src=ss.getSheetByName('タスク');const dst=ss.getSheetByName('完了');const lastRow=src.getLastRow();for(let r=lastRow;r>=2;r--){if(src.getRange(r,3).getValue()==='完了'){const row=src.getRange(r,1,1,src.getLastColumn()).getValues()[0];dst.appendRow(row);src.deleteRow(r);}}}",
+    "tags": ["spreadsheet","move","filter","rows"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-019",
+    "title": "データ範囲を新規シートへコピー",
+    "description": "アクティブシートのデータ範囲を新規シートにそのままコピーします。",
+    "language": "gas",
+    "code": "function copyDataToNewSheet(){const ss=SpreadsheetApp.getActiveSpreadsheet();const src=ss.getActiveSheet();const dst=ss.insertSheet(src.getName()+'_コピー');const range=src.getDataRange();dst.getRange(1,1,range.getNumRows(),range.getNumColumns()).setValues(range.getValues());}",
+    "tags": ["spreadsheet","copy","data","sheet"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-020",
+    "title": "列名から列番号を取得する",
+    "description": "1行目のヘッダーから列名を検索し、その列番号を返します。",
+    "language": "gas",
+    "code": "function getColumnByHeader(header){const sheet=SpreadsheetApp.getActiveSheet();const headers=sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];const idx=headers.indexOf(header);return idx===-1?null:idx+1;}",
+    "tags": ["spreadsheet","header","column","utility"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-021",
+    "title": "列全体のトリム（前後スペース削除）",
+    "description": "A列の文字列の前後スペースを削除して上書きします。",
+    "language": "gas",
+    "code": "function trimColumnA(){const sheet=SpreadsheetApp.getActiveSheet();const lastRow=sheet.getLastRow();const range=sheet.getRange(2,1,lastRow-1,1);const values=range.getValues().map(r=>[typeof r[0]==='string'?r[0].trim():r[0]]);range.setValues(values);}",
+    "tags": ["spreadsheet","trim","cleanup","text"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-022",
+    "title": "文字列を数値に変換して再書き込み",
+    "description": "A列の文字列の数字を数値型に変換します（日本語などは無視）。",
+    "language": "gas",
+    "code": "function convertTextToNumber(){const sheet=SpreadsheetApp.getActiveSheet();const lastRow=sheet.getLastRow();const range=sheet.getRange(2,1,lastRow-1,1);const values=range.getValues().map(r=>[Number(r[0])||r[0]]);range.setValues(values);}",
+    "tags": ["spreadsheet","number","convert","cleanup"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-023",
+    "title": "行数をカウントする（ヘッダー除外）",
+    "description": "A列の非空セル数からデータ行数をカウントします。",
+    "language": "gas",
+    "code": "function countDataRows(){const sheet=SpreadsheetApp.getActiveSheet();const values=sheet.getRange('A2:A').getValues();const count=values.filter(r=>r[0]!==''&&r[0]!=null).length;Logger.log(count);}",
+    "tags": ["spreadsheet","count","rows"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-024",
+    "title": "ヘッダー行に太字と背景色を設定",
+    "description": "1行目のヘッダーに太字・中央揃え・背景色を設定します。",
+    "language": "gas",
+    "code": "function formatHeaderRow(){const sheet=SpreadsheetApp.getActiveSheet();const range=sheet.getRange(1,1,1,sheet.getLastColumn());range.setFontWeight('bold').setHorizontalAlignment('center').setBackground('#e0e0e0');}",
+    "tags": ["spreadsheet","format","header","style"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-025",
+    "title": "列幅を自動調整する",
+    "description": "使用されている列すべてを自動サイズ調整します。",
+    "language": "gas",
+    "code": "function autoResizeColumns(){const sheet=SpreadsheetApp.getActiveSheet();sheet.autoResizeColumns(1,sheet.getLastColumn());}",
+    "tags": ["spreadsheet","format","column","resize"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-026",
+    "title": "行の高さを一括設定",
+    "description": "2行目から最終行までの行の高さを統一します。",
+    "language": "gas",
+    "code": "function setRowHeights(){const sheet=SpreadsheetApp.getActiveSheet();sheet.setRowHeights(2,sheet.getLastRow()-1,24);}",
+    "tags": ["spreadsheet","format","row","height"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-027",
+    "title": "交互に背景色を付ける（縞模様）",
+    "description": "2行目以降の奇数行・偶数行で背景色を変えて見やすくします。",
+    "language": "gas",
+    "code": "function zebraStripe(){const sheet=SpreadsheetApp.getActiveSheet();const lastRow=sheet.getLastRow();for(let r=2;r<=lastRow;r++){const color=r%2===0?'#ffffff':'#f5f5f5';sheet.getRange(r,1,1,sheet.getLastColumn()).setBackground(color);}}",
+    "tags": ["spreadsheet","format","background","style"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-028",
+    "title": "日付書式をまとめて変更",
+    "description": "指定範囲のセルをyyyy/MM/dd形式の日付表示に設定します。",
+    "language": "gas",
+    "code": "function setDateFormat(){const sheet=SpreadsheetApp.getActiveSheet();sheet.getRange('B2:B').setNumberFormat('yyyy/MM/dd');}",
+    "tags": ["spreadsheet","format","date","numberFormat"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-029",
+    "title": "金額書式（カンマ区切り）を設定",
+    "description": "金額列に#,##0形式の数値書式を設定します。",
+    "language": "gas",
+    "code": "function setCurrencyFormat(){const sheet=SpreadsheetApp.getActiveSheet();sheet.getRange('C2:C').setNumberFormat('#,##0');}",
+    "tags": ["spreadsheet","format","currency","numberFormat"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-030",
+    "title": "条件付き書式：しきい値以上を赤字に",
+    "description": "C列の値が100以上のセルを赤字にします（簡易条件付き書式）。",
+    "language": "gas",
+    "code": "function highlightOverThreshold(){const sheet=SpreadsheetApp.getActiveSheet();const lastRow=sheet.getLastRow();for(let r=2;r<=lastRow;r++){const cell=sheet.getRange(r,3);const v=Number(cell.getValue());cell.setFontColor(v>=100?'#d32f2f':'#000000');}}",
+    "tags": ["spreadsheet","format","condition","fontColor"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-031",
+    "title": "データ検証：固定リストのプルダウンを設定",
+    "description": "B列に「未着手・進行中・完了」のプルダウンリストを設定します。",
+    "language": "gas",
+    "code": "function setValidationFixedList(){const sheet=SpreadsheetApp.getActiveSheet();const rule=SpreadsheetApp.newDataValidation().requireValueInList(['未着手','進行中','完了'],true).build();sheet.getRange('B2:B').setDataValidation(rule);}",
+    "tags": ["spreadsheet","validation","dropdown","list"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-032",
+    "title": "データ検証：別シートの値をプルダウン元にする",
+    "description": "別シート「マスタ」のA列の値をB列のプルダウン候補にします。",
+    "language": "gas",
+    "code": "function setValidationFromRange(){const ss=SpreadsheetApp.getActiveSpreadsheet();const sheet=ss.getActiveSheet();const master=ss.getSheetByName('マスタ');const last=master.getLastRow();const listRange=master.getRange(2,1,last-1,1);const rule=SpreadsheetApp.newDataValidation().requireValueInRange(listRange,true).build();sheet.getRange('B2:B').setDataValidation(rule);}",
+    "tags": ["spreadsheet","validation","dropdown","range"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-033",
+    "title": "データ検証をまとめて削除",
+    "description": "指定範囲のデータ検証ルールをすべて削除します。",
+    "language": "gas",
+    "code": "function removeValidation(){const sheet=SpreadsheetApp.getActiveSheet();const range=sheet.getRange('A2:D');range.clearDataValidations();}",
+    "tags": ["spreadsheet","validation","clear","range"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-034",
+    "title": "保護シートを作成（自分だけ編集可能）",
+    "description": "アクティブシートを保護し、スクリプト実行者のみ編集可能にします。",
+    "language": "gas",
+    "code": "function protectSheetOnlyMe(){const sheet=SpreadsheetApp.getActiveSheet();const me=Session.getEffectiveUser();const protection=sheet.protect().setDescription('シート保護');protection.addEditor(me);protection.removeEditors(protection.getEditors().filter(e=>e.getEmail()!==me.getEmail()));}",
+    "tags": ["spreadsheet","protect","sheet","permission"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-035",
+    "title": "範囲のみを保護（入力制限）",
+    "description": "A1:C10のみ保護して他は編集可能にします。",
+    "language": "gas",
+    "code": "function protectRange(){const sheet=SpreadsheetApp.getActiveSheet();const range=sheet.getRange('A1:C10');const protection=range.protect().setDescription('保護範囲');protection.removeEditors(protection.getEditors());}",
+    "tags": ["spreadsheet","protect","range","permission"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-036",
+    "title": "フィルタビューを作成",
+    "description": "アクティブシートにA1からのデータに対するフィルタビューを作成します。",
+    "language": "gas",
+    "code": "function createFilter(){const sheet=SpreadsheetApp.getActiveSheet();const range=sheet.getDataRange();if(!range.getFilter()){range.createFilter();}}",
+    "tags": ["spreadsheet","filter","view","data"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-037",
+    "title": "フィルタを解除",
+    "description": "アクティブシートに設定されているフィルタを解除します。",
+    "language": "gas",
+    "code": "function removeFilter(){const sheet=SpreadsheetApp.getActiveSheet();const filter=sheet.getFilter();if(filter)filter.remove();}",
+    "tags": ["spreadsheet","filter","remove"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-038",
+    "title": "named range（名前付き範囲）を取得",
+    "description": "指定された名前付き範囲の実際のアドレスと値をログに出力します。",
+    "language": "gas",
+    "code": "function logNamedRange(name){const ss=SpreadsheetApp.getActiveSpreadsheet();const named=ss.getRangeByName(name);if(!named){Logger.log('not found');return;}Logger.log(named.getA1Notation());Logger.log(named.getValues());}",
+    "tags": ["spreadsheet","namedRange","range"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-039",
+    "title": "named range（名前付き範囲）を新規作成",
+    "description": "アクティブシートのA1:C10を指定名の名前付き範囲として登録します。",
+    "language": "gas",
+    "code": "function createNamedRange(){const ss=SpreadsheetApp.getActiveSpreadsheet();const sheet=ss.getActiveSheet();const range=sheet.getRange('A1:C10');ss.setNamedRange('MY_RANGE',range);}",
+    "tags": ["spreadsheet","namedRange","create"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-040",
+    "title": "onEditトリガーで変更ログを記録",
+    "description": "セルが編集されたときに変更前後の値をログシートに記録します。",
+    "language": "gas",
+    "code": "function onEdit(e){const ss=SpreadsheetApp.getActiveSpreadsheet();const logSheet=ss.getSheetByName('変更ログ')||ss.insertSheet('変更ログ');const r=e.range;const oldValue=e.oldValue||'';const newValue=e.value||'';logSheet.appendRow([new Date(),r.getSheet().getName(),r.getA1Notation(),oldValue,newValue]);}",
+    "tags": ["spreadsheet","trigger","onEdit","log"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-041",
+    "title": "onOpenでカスタムメニューを追加",
+    "description": "スプレッドシートを開いたときに独自メニューを追加します。",
+    "language": "gas",
+    "code": "function onOpen(){const ui=SpreadsheetApp.getUi();ui.createMenu('ツール').addItem('集計実行','runSummary').addToUi();}function runSummary(){SpreadsheetApp.getUi().alert('集計をここで実行');}",
+    "tags": ["spreadsheet","trigger","onOpen","menu"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-042",
+    "title": "編集された行を別シートへ移動（onEdit）",
+    "description": "チェックボックスがオンになった行を完了シートへ移動します。",
+    "language": "gas",
+    "code": "function onEditMoveRow(e){const range=e.range;if(range.getColumn()!=1)return;const sheet=range.getSheet();if(sheet.getName()!=='タスク')return;const value=range.getValue();if(value!==true)return;const ss=sheet.getParent();const dst=ss.getSheetByName('完了')||ss.insertSheet('完了');const row=sheet.getRange(range.getRow(),1,1,sheet.getLastColumn()).getValues()[0];dst.appendRow(row);sheet.deleteRow(range.getRow());}",
+    "tags": ["spreadsheet","trigger","onEdit","moveRow"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-043",
+    "title": "スケジュール実行で日次バックアップシートを作成",
+    "description": "毎日シートをコピーして日付付きバックアップを作ります。",
+    "language": "gas",
+    "code": "function dailyBackup(){const ss=SpreadsheetApp.getActiveSpreadsheet();const src=ss.getSheetByName('データ');const name='バックアップ_'+Utilities.formatDate(new Date(),Session.getScriptTimeZone(),'yyyyMMdd');const copy=src.copyTo(ss).setName(name);copy.hideSheet();}",
+    "tags": ["spreadsheet","backup","timeTrigger"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-044",
+    "title": "インストール型トリガーをスクリプトから作成",
+    "description": "日次午前9時にdailyBackupを実行するトリガーを作成します。",
+    "language": "gas",
+    "code": "function createDailyBackupTrigger(){ScriptApp.newTrigger('dailyBackup').timeBased().atHour(9).everyDays(1).create();}",
+    "tags": ["spreadsheet","trigger","timeBased","setup"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-045",
+    "title": "インストール型トリガーを全削除",
+    "description": "このプロジェクトに紐づく全てのトリガーを削除します。",
+    "language": "gas",
+    "code": "function deleteAllTriggers(){const triggers=ScriptApp.getProjectTriggers();triggers.forEach(t=>ScriptApp.deleteTrigger(t));}",
+    "tags": ["spreadsheet","trigger","cleanup"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-046",
+    "title": "シートをCSVとしてDriveに保存",
+    "description": "アクティブシートをCSV形式のファイルとしてGoogleドライブに保存します。",
+    "language": "gas",
+    "code": "function exportSheetToCsv(){const sheet=SpreadsheetApp.getActiveSheet();const values=sheet.getDataRange().getDisplayValues();const csv=values.map(r=>r.map(v=>`\"${String(v).replace(/\"/g,'\"\"')}\"`).join(',')).join('\\n');DriveApp.createFile(sheet.getName()+'.csv',csv,MimeType.CSV);}",
+    "tags": ["spreadsheet","export","csv","drive"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-047",
+    "title": "CSVファイルを読み込んでシートに展開",
+    "description": "Drive上のCSVファイルを開き、アクティブシートに展開します。",
+    "language": "gas",
+    "code": "function importCsvToSheet(){const file=DriveApp.getFileById('CSVファイルID');const content=file.getBlob().getDataAsString('UTF-8');const rows=content.split(/\\r?\\n/).filter(String).map(l=>l.split(','));const sheet=SpreadsheetApp.getActiveSheet();sheet.clear();sheet.getRange(1,1,rows.length,rows[0].length).setValues(rows);}",
+    "tags": ["spreadsheet","import","csv","drive"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-048",
+    "title": "シートをPDFにしてメール送信",
+    "description": "アクティブシートをPDFとしてエクスポートし、指定メールアドレスへ送信します。",
+    "language": "gas",
+    "code": "function sendSheetAsPdf(){const ss=SpreadsheetApp.getActiveSpreadsheet();const sheet=ss.getActiveSheet();const url=ss.getUrl().replace(/edit$/,'');const exportUrl=url+'export?format=pdf&portrait=true&gid='+sheet.getSheetId();const token=ScriptApp.getOAuthToken();const response=UrlFetchApp.fetch(exportUrl,{headers:{Authorization:'Bearer '+token}});const blob=response.getBlob().setName(sheet.getName()+'.pdf');MailApp.sendEmail('example@example.com','シートPDF', 'PDFを添付します',{attachments:[blob]});}",
+    "tags": ["spreadsheet","export","pdf","mail"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-049",
+    "title": "範囲の値をメール本文として送信",
+    "description": "指定範囲の値を整形してメール本文として送信します。",
+    "language": "gas",
+    "code": "function sendRangeValuesByMail(){const sheet=SpreadsheetApp.getActiveSheet();const range=sheet.getRange('A1:C10');const values=range.getDisplayValues();const body=values.map(r=>r.join('\\t')).join('\\n');MailApp.sendEmail('example@example.com','レポート',body);}",
+    "tags": ["spreadsheet","mail","report","range"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-050",
+    "title": "シートの変更をSlackへ通知",
+    "description": "onEditトリガーからSlackのIncoming Webhookへ変更内容を通知します。",
+    "language": "gas",
+    "code": "function onEditNotifySlack(e){const url='SlackのWebhookURL';const sheet=e.range.getSheet();const payload={text:`${sheet.getName()} ${e.range.getA1Notation()} が変更されました: ${e.oldValue||''} -> ${e.value||''}`};UrlFetchApp.fetch(url,{method:'post',contentType:'application/json',payload:JSON.stringify(payload)});}",
+    "tags": ["spreadsheet","slack","webhook","onEdit"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-051",
+    "title": "複数シートの値を1つに集約",
+    "description": "指定されたシート群のデータを「集計」シートに縦方向に結合します。",
+    "language": "gas",
+    "code": "function mergeSheets(){const ss=SpreadsheetApp.getActiveSpreadsheet();const target=ss.getSheetByName('集計')||ss.insertSheet('集計');target.clear();let row=1;['1月','2月','3月'].forEach(name=>{const sheet=ss.getSheetByName(name);if(!sheet)return;const range=sheet.getDataRange();const values=range.getValues();target.getRange(row,1,values.length,values[0].length).setValues(values);row+=values.length;});}",
+    "tags": ["spreadsheet","merge","sheets","aggregate"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-052",
+    "title": "ピボットテーブル風の簡易集計",
+    "description": "A列のキーごとにC列の合計を計算し、「集計」シートに出力します。",
+    "language": "gas",
+    "code": "function simpleGroupSum(){const ss=SpreadsheetApp.getActiveSpreadsheet();const src=ss.getSheetByName('データ');const dst=ss.getSheetByName('集計')||ss.insertSheet('集計');dst.clear();const values=src.getDataRange().getValues().slice(1);const map={};values.forEach(r=>{const k=r[0];const v=Number(r[2])||0;map[k]=(map[k]||0)+v;});const out=[['キー','合計']];Object.keys(map).forEach(k=>out.push([k,map[k]]));dst.getRange(1,1,out.length,2).setValues(out);}",
+    "tags": ["spreadsheet","aggregate","group","sum"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-053",
+    "title": "フォーム回答の最新行を取得",
+    "description": "フォーム連携シートの最新回答行の値を取得しログ出力します。",
+    "language": "gas",
+    "code": "function logLastFormResponse(){const sheet=SpreadsheetApp.getActiveSheet();const lastRow=sheet.getLastRow();const values=sheet.getRange(lastRow,1,1,sheet.getLastColumn()).getValues()[0];Logger.log(values);}",
+    "tags": ["spreadsheet","forms","lastRow","response"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-054",
+    "title": "チェックボックス列の完了率を計算",
+    "description": "B列のチェックボックスの完了率をシート上部に表示します。",
+    "language": "gas",
+    "code": "function calcCheckRate(){const sheet=SpreadsheetApp.getActiveSheet();const values=sheet.getRange('B2:B').getValues().filter(r=>r[0]!==''&&r[0]!=null);const total=values.length;const done=values.filter(r=>r[0]===true).length;const rate=total===0?0:done/total;sheet.getRange('D1').setValue('完了率');sheet.getRange('E1').setNumberFormat('0.0%').setValue(rate);}",
+    "tags": ["spreadsheet","checkbox","rate","summary"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-055",
+    "title": "行のコピー＆貼り付け（値のみ）",
+    "description": "選択中の行を値のみ別シートの末尾にコピーします。",
+    "language": "gas",
+    "code": "function copyRowValuesOnly(){const ss=SpreadsheetApp.getActiveSpreadsheet();const srcSheet=ss.getActiveSheet();const dstSheet=ss.getSheetByName('コピー先')||ss.insertSheet('コピー先');const row=srcSheet.getActiveRange().getRow();const values=srcSheet.getRange(row,1,1,srcSheet.getLastColumn()).getValues();dstSheet.appendRow(values[0]);}",
+    "tags": ["spreadsheet","copy","row","valuesOnly"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-056",
+    "title": "シート一覧を別シートに出力",
+    "description": "ブック内の全シート名とIDを「シート一覧」シートに出力します。",
+    "language": "gas",
+    "code": "function outputSheetList(){const ss=SpreadsheetApp.getActiveSpreadsheet();const dst=ss.getSheetByName('シート一覧')||ss.insertSheet('シート一覧');dst.clear();const data=[['名前','ID']];ss.getSheets().forEach(s=>data.push([s.getName(),s.getSheetId()]));dst.getRange(1,1,data.length,2).setValues(data);}",
+    "tags": ["spreadsheet","sheets","metadata","list"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-057",
+    "title": "列ごとの合計を自動計算して最終行に追加",
+    "description": "数値列の合計を最終行の下に追加します。",
+    "language": "gas",
+    "code": "function addColumnTotals(){const sheet=SpreadsheetApp.getActiveSheet();const range=sheet.getDataRange();const values=range.getValues();const header=values.shift();const totals=new Array(header.length).fill(0);values.forEach(r=>r.forEach((v,i)=>{const n=Number(v);if(!isNaN(n))totals[i]+=n;}));sheet.getRange(range.getLastRow()+1,1,1,header.length).setValues([totals]);}",
+    "tags": ["spreadsheet","summary","total","columns"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-058",
+    "title": "セルのコメント（メモ）を一括削除",
+    "description": "アクティブシートの全てのコメントを削除します。",
+    "language": "gas",
+    "code": "function clearAllNotes(){const sheet=SpreadsheetApp.getActiveSheet();const range=sheet.getDataRange();range.clearNote();}",
+    "tags": ["spreadsheet","note","comment","clear"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-059",
+    "title": "セルにコメント（メモ）を追加",
+    "description": "アクティブセルに現在日時とユーザーのコメントを追加します。",
+    "language": "gas",
+    "code": "function addNoteToActiveCell(){const ui=SpreadsheetApp.getUi();const res=ui.prompt('コメントを入力');if(res.getSelectedButton()!=ui.Button.OK)return;const cell=SpreadsheetApp.getActiveSheet().getActiveCell();const note=Utilities.formatDate(new Date(),Session.getScriptTimeZone(),'yyyy/MM/dd HH:mm')+'\\n'+res.getResponseText();cell.setNote(note);}",
+    "tags": ["spreadsheet","note","comment","input"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-060",
+    "title": "セルの背景色を条件で一括変更",
+    "description": "C列が0以下の行の背景色を赤に設定します。",
+    "language": "gas",
+    "code": "function colorNegativeRows(){const sheet=SpreadsheetApp.getActiveSheet();const lastRow=sheet.getLastRow();for(let r=2;r<=lastRow;r++){const v=Number(sheet.getRange(r,3).getValue());const color=v<=0?'#ffcdd2':'#ffffff';sheet.getRange(r,1,1,sheet.getLastColumn()).setBackground(color);}}",
+    "tags": ["spreadsheet","background","condition","format"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-061",
+    "title": "セルの保護と解除をトグル",
+    "description": "選択中のセルの保護をON/OFF切り替えます。",
+    "language": "gas",
+    "code": "function toggleCellProtection(){const sheet=SpreadsheetApp.getActiveSheet();const range=sheet.getActiveRange();const protections=sheet.getProtections(SpreadsheetApp.ProtectionType.RANGE).filter(p=>p.getRange().getA1Notation()===range.getA1Notation());if(protections.length){protections.forEach(p=>p.remove());}else{range.protect().setDescription('一時保護');}}",
+    "tags": ["spreadsheet","protect","toggle","range"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-062",
+    "title": "値が変わったセルだけを書式リセット",
+    "description": "onEditで編集されたセルの書式をデフォルトに戻します。",
+    "language": "gas",
+    "code": "function onEditResetFormat(e){e.range.clearFormat();}",
+    "tags": ["spreadsheet","onEdit","format","reset"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-063",
+    "title": "アクティブ行を最上部にスクロール",
+    "description": "選択中の行がシートの一番上に来るようにスクロールします。",
+    "language": "gas",
+    "code": "function scrollToActiveRowTop(){const sheet=SpreadsheetApp.getActiveSheet();const row=sheet.getActiveRange().getRow();sheet.setActiveRange(sheet.getRange(row,1));SpreadsheetApp.flush();}",
+    "tags": ["spreadsheet","view","scroll","activeRow"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-064",
+    "title": "行の表示／非表示を切り替え",
+    "description": "選択行の表示状態をトグルします。",
+    "language": "gas",
+    "code": "function toggleRowHidden(){const sheet=SpreadsheetApp.getActiveSheet();const row=sheet.getActiveRange().getRow();const hidden=sheet.isRowHiddenByUser(row);if(hidden)sheet.showRows(row);else sheet.hideRows(row);}",
+    "tags": ["spreadsheet","row","hide","toggle"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-065",
+    "title": "列の表示／非表示を切り替え",
+    "description": "選択列の表示状態をトグルします。",
+    "language": "gas",
+    "code": "function toggleColumnHidden(){const sheet=SpreadsheetApp.getActiveSheet();const col=sheet.getActiveRange().getColumn();const hidden=sheet.isColumnHiddenByUser(col);if(hidden)sheet.showColumns(col);else sheet.hideColumns(col);}",
+    "tags": ["spreadsheet","column","hide","toggle"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-066",
+    "title": "セルの入力履歴を簡易ログに残す",
+    "description": "onEditでA列の編集を「履歴」シートに残します。",
+    "language": "gas",
+    "code": "function onEditLogHistory(e){if(e.range.getColumn()!=1)return;const ss=SpreadsheetApp.getActiveSpreadsheet();const log=ss.getSheetByName('履歴')||ss.insertSheet('履歴');log.appendRow([new Date(),e.range.getSheet().getName(),e.range.getA1Notation(),e.oldValue||'',e.value||'']);}",
+    "tags": ["spreadsheet","onEdit","history","log"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-067",
+    "title": "キャッシュを使った重い処理の結果保存",
+    "description": "スプレッドシートの集計結果をキャッシュし、再利用します。",
+    "language": "gas",
+    "code": "function getCachedSummary(){const cache=CacheService.getScriptCache();const key='summary';const cached=cache.get(key);if(cached){Logger.log('from cache');Logger.log(cached);return;}const sheet=SpreadsheetApp.getActiveSheet();const sum=sheet.getRange('C2:C').getValues().reduce((a,r)=>a+(Number(r[0])||0),0);cache.put(key,String(sum),3600);Logger.log('calculated');Logger.log(sum);}",
+    "tags": ["spreadsheet","cache","performance","summary"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-068",
+    "title": "行の並び替え（ドラッグ相当）",
+    "description": "アクティブ行を1行上へ移動します。",
+    "language": "gas",
+    "code": "function moveRowUp(){const sheet=SpreadsheetApp.getActiveSheet();const r=sheet.getActiveRange().getRow();if(r<=2)return;sheet.insertRowBefore(r-1);sheet.getRange(r+1,1,1,sheet.getLastColumn()).moveTo(sheet.getRange(r-1,1));sheet.deleteRow(r+1);}",
+    "tags": ["spreadsheet","row","move","order"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-069",
+    "title": "セルの入力規則付きテンプレ行を複製",
+    "description": "テンプレート行（2行目）を最終行の下に複製します。",
+    "language": "gas",
+    "code": "function duplicateTemplateRow(){const sheet=SpreadsheetApp.getActiveSheet();const templateRow=2;const last=sheet.getLastRow();sheet.insertRowAfter(last);sheet.getRange(templateRow,1,1,sheet.getLastColumn()).copyTo(sheet.getRange(last+1,1),{contentsOnly:false});}",
+    "tags": ["spreadsheet","template","row","copy"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-070",
+    "title": "セルリンク（HYPERLINK）を自動生成",
+    "description": "URLとタイトルからHYPERLINK関数入りセルを作成します。",
+    "language": "gas",
+    "code": "function createHyperlinks(){const sheet=SpreadsheetApp.getActiveSheet();const last=sheet.getLastRow();for(let r=2;r<=last;r++){const url=sheet.getRange(r,1).getValue();const title=sheet.getRange(r,2).getValue();if(url)sheet.getRange(r,3).setFormula(`=HYPERLINK(\"${url}\",\"${title||url}\")`);}}",
+    "tags": ["spreadsheet","hyperlink","formula","url"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-071",
+    "title": "IMPORTRANGEの参照URLを一括更新",
+    "description": "シート内のIMPORTRANGE関数のスプレッドシートIDを新IDに置き換えます。",
+    "language": "gas",
+    "code": "function updateImportRangeId(){const sheet=SpreadsheetApp.getActiveSheet();const oldId='旧ID';const newId='新ID';const range=sheet.getDataRange();const formulas=range.getFormulas();for(let r=0;r<formulas.length;r++){for(let c=0;c<formulas[0].length;c++){if(formulas[r][c].indexOf('IMPORTRANGE')!==-1){formulas[r][c]=formulas[r][c].replace(oldId,newId);}}}range.setFormulas(formulas);}",
+    "tags": ["spreadsheet","IMPORTRANGE","formula","update"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-072",
+    "title": "QUERY関数用のSQL文字列を自動生成",
+    "description": "列名からQUERY関数用のselect句を動的に生成します。",
+    "language": "gas",
+    "code": "function buildQueryFromHeaders(){const sheet=SpreadsheetApp.getActiveSheet();const headers=sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];const cols=headers.map((h,i)=>`Col${i+1} label Col${i+1} '${h}'`).join(' , ');Logger.log(cols);}",
+    "tags": ["spreadsheet","QUERY","sql","header"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-073",
+    "title": "重い処理前にUI確認ダイアログを表示",
+    "description": "処理前にユーザーに確認ダイアログを出し、OK時だけ続行します。",
+    "language": "gas",
+    "code": "function confirmAndRun(){const ui=SpreadsheetApp.getUi();const res=ui.alert('確認','集計を実行しますか？',ui.ButtonSet.OK_CANCEL);if(res!=ui.Button.OK)return;SpreadsheetApp.getActiveSheet().getRange('A1').setValue('集計実行');}",
+    "tags": ["spreadsheet","ui","confirm","safety"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-074",
+    "title": "別ブックからVLOOKUP相当を実行",
+    "description": "別スプレッドシートからキーで検索して値を取得します。",
+    "language": "gas",
+    "code": "function vlookupFromAnotherFile(){const src=SpreadsheetApp.openById('参照元ID').getSheetByName('マスタ');const map={};src.getDataRange().getValues().slice(1).forEach(r=>map[r[0]]=r[1]);const sheet=SpreadsheetApp.getActiveSheet();const last=sheet.getLastRow();for(let r=2;r<=last;r++){const key=sheet.getRange(r,1).getValue();sheet.getRange(r,2).setValue(map[key]||'');}}",
+    "tags": ["spreadsheet","lookup","external","vlookup"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-075",
+    "title": "ユニークな値一覧を作成",
+    "description": "A列のユニークな値を「ユニーク」シートに出力します。",
+    "language": "gas",
+    "code": "function uniqueValuesToSheet(){const ss=SpreadsheetApp.getActiveSpreadsheet();const src=ss.getActiveSheet();const dst=ss.getSheetByName('ユニーク')||ss.insertSheet('ユニーク');dst.clear();const values=src.getRange('A2:A').getValues().map(r=>r[0]).filter(String);const uniq=[...new Set(values)];dst.getRange(1,1,uniq.length,1).setValues(uniq.map(v=>[v]));}",
+    "tags": ["spreadsheet","unique","list","values"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-076",
+    "title": "ID列から連番を自動採番",
+    "description": "A列が空の行に対して連番IDを採番します。",
+    "language": "gas",
+    "code": "function assignSequentialIds(){const sheet=SpreadsheetApp.getActiveSheet();const last=sheet.getLastRow();let id=1;for(let r=2;r<=last;r++){const cell=sheet.getRange(r,1);if(cell.getValue()===''){cell.setValue(id++);}else{id=Math.max(id,Number(cell.getValue())+1||id);}}}",
+    "tags": ["spreadsheet","id","sequence","auto"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-077",
+    "title": "月別シートを自動生成",
+    "description": "指定年の12か月分のシートを自動作成します。",
+    "language": "gas",
+    "code": "function createMonthlySheets(){const ss=SpreadsheetApp.getActiveSpreadsheet();const year=2025;for(let m=1;m<=12;m++){const name=year+'-'+('0'+m).slice(-2);if(!ss.getSheetByName(name))ss.insertSheet(name);}}",
+    "tags": ["spreadsheet","sheet","monthly","create"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-078",
+    "title": "月別シートにデータを振り分け",
+    "description": "日付列（B列）から月を判定し、対応する月シートへ行をコピーします。",
+    "language": "gas",
+    "code": "function distributeRowsByMonth(){const ss=SpreadsheetApp.getActiveSpreadsheet();const src=ss.getSheetByName('データ');const values=src.getDataRange().getValues();values.slice(1).forEach(r=>{const date=r[1];if(!(date instanceof Date))return;const name=date.getFullYear()+'-'+('0'+(date.getMonth()+1)).slice(-2);const sheet=ss.getSheetByName(name)||ss.insertSheet(name);sheet.appendRow(r);});}",
+    "tags": ["spreadsheet","distribute","month","date"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-079",
+    "title": "シンプルなガントチャート用バー作成",
+    "description": "開始日と終了日からバー部分のセル背景を塗ります。",
+    "language": "gas",
+    "code": "function buildSimpleGantt(){const sheet=SpreadsheetApp.getActiveSheet();const header=sheet.getRange(1,3,1,sheet.getLastColumn()-2).getValues()[0];const last=sheet.getLastRow();for(let r=2;r<=last;r++){const start=sheet.getRange(r,1).getValue();const end=sheet.getRange(r,2).getValue();if(!(start instanceof Date)||!(end instanceof Date))continue;for(let c=0;c<header.length;c++){const d=header[c];if(!(d instanceof Date))continue;const col=3+c;const inRange=d>=start&&d<=end?'#90caf9':'#ffffff';sheet.getRange(r,col).setBackground(inRange);}}}",
+    "tags": ["spreadsheet","gantt","date","visual"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-080",
+    "title": "条件に応じたリマインドメール送信",
+    "description": "期限日が今日以前でステータスが未完了のタスクにリマインドメールを送ります。",
+    "language": "gas",
+    "code": "function sendDeadlineReminders(){const sheet=SpreadsheetApp.getActiveSheet();const last=sheet.getLastRow();const today=new Date();for(let r=2;r<=last;r++){const email=sheet.getRange(r,1).getValue();const title=sheet.getRange(r,2).getValue();const due=sheet.getRange(r,3).getValue();const status=sheet.getRange(r,4).getValue();if(!email||!(due instanceof Date)||status==='完了')continue;if(due<=today){MailApp.sendEmail(email,'期限リマインド',`タスク「${title}」の期限が近づいています。`);}}}",
+    "tags": ["spreadsheet","reminder","deadline","mail"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-081",
+    "title": "シートの編集権限を一括確認",
+    "description": "スプレッドシートの編集者一覧を「権限」シートに出力します。",
+    "language": "gas",
+    "code": "function listEditors(){const ss=SpreadsheetApp.getActiveSpreadsheet();const sheet=ss.getSheetByName('権限')||ss.insertSheet('権限');sheet.clear();const editors=ss.getEditors();const data=[['メール','名前']];editors.forEach(e=>data.push([e.getEmail(),e.getName()]));sheet.getRange(1,1,data.length,2).setValues(data);}",
+    "tags": ["spreadsheet","permission","editors","list"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-082",
+    "title": "列ごとに平均値を計算",
+    "description": "数値列ごとの平均値をシート下部に出力します。",
+    "language": "gas",
+    "code": "function addColumnAverages(){const sheet=SpreadsheetApp.getActiveSheet();const range=sheet.getDataRange();const values=range.getValues();values.shift();const cols=range.getNumColumns();const avg=new Array(cols).fill(null).map((_,i)=>{let sum=0,count=0;values.forEach(r=>{const n=Number(r[i]);if(!isNaN(n)){sum+=n;count++;}});return count?sum/count:'';});sheet.getRange(range.getLastRow()+1,1,1,cols).setValues([avg]);}",
+    "tags": ["spreadsheet","average","summary","columns"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-083",
+    "title": "行内の最大値を計算して隣列に出力",
+    "description": "各行の数値セルの最大値をD列に出力します。",
+    "language": "gas",
+    "code": "function setRowMax(){const sheet=SpreadsheetApp.getActiveSheet();const last=sheet.getLastRow();for(let r=2;r<=last;r++){const row=sheet.getRange(r,1,1,3).getValues()[0];const nums=row.map(v=>Number(v)).filter(v=>!isNaN(v));sheet.getRange(r,4).setValue(nums.length?Math.max.apply(null,nums):'');}}",
+    "tags": ["spreadsheet","max","row","summary"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-084",
+    "title": "行内の文字列を結合して1セルにまとめる",
+    "description": "A～C列の文字列をスペース区切りで結合しD列に出力します。",
+    "language": "gas",
+    "code": "function concatRowText(){const sheet=SpreadsheetApp.getActiveSheet();const last=sheet.getLastRow();for(let r=2;r<=last;r++){const row=sheet.getRange(r,1,1,3).getValues()[0];sheet.getRange(r,4).setValue(row.filter(String).join(' '));}}",
+    "tags": ["spreadsheet","concat","text","row"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-085",
+    "title": "シートを名前順に並び替え",
+    "description": "スプレッドシート内のシートの並び順を名前順にソートします。",
+    "language": "gas",
+    "code": "function sortSheetsByName(){const ss=SpreadsheetApp.getActiveSpreadsheet();const sheets=ss.getSheets().sort((a,b)=>a.getName().localeCompare(b.getName()));sheets.forEach((s,i)=>ss.setActiveSheet(s).activate()&&ss.moveActiveSheet(i+1));}",
+    "tags": ["spreadsheet","sheets","sort","name"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-086",
+    "title": "空のシートを一括削除",
+    "description": "データが1行（ヘッダー）のみのシートを削除します。",
+    "language": "gas",
+    "code": "function deleteEmptySheets(){const ss=SpreadsheetApp.getActiveSpreadsheet();ss.getSheets().forEach(s=>{if(s.getLastRow()<=1&&ss.getSheets().length>1)ss.deleteSheet(s);});}",
+    "tags": ["spreadsheet","sheets","cleanup","delete"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-087",
+    "title": "特定のシートだけを残して他を削除",
+    "description": "指定した名前以外のシートを削除します。",
+    "language": "gas",
+    "code": "function keepOnlySheets(){const keep=['データ','マスタ'];const ss=SpreadsheetApp.getActiveSpreadsheet();ss.getSheets().forEach(s=>{if(keep.indexOf(s.getName())===-1&&ss.getSheets().length>keep.length)ss.deleteSheet(s);});}",
+    "tags": ["spreadsheet","sheets","cleanup","keep"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-088",
+    "title": "セルの入力内容をJSONとしてエクスポート",
+    "description": "データ範囲をJSON文字列に変換してDriveに保存します。",
+    "language": "gas",
+    "code": "function exportSheetToJson(){const sheet=SpreadsheetApp.getActiveSheet();const values=sheet.getDataRange().getValues();const header=values.shift();const list=values.map(r=>{const obj={};header.forEach((h,i)=>obj[h]=r[i]);return obj;});const json=JSON.stringify(list,null,2);DriveApp.createFile(sheet.getName()+'.json',json,MimeType.PLAIN_TEXT);}",
+    "tags": ["spreadsheet","export","json","drive"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-089",
+    "title": "JSONファイルを読み込んでシートへ",
+    "description": "Drive上のJSONファイルを読み込み、ヘッダー付きでシートに展開します。",
+    "language": "gas",
+    "code": "function importJsonToSheet(){const file=DriveApp.getFileById('JSONファイルID');const text=file.getBlob().getDataAsString('UTF-8');const list=JSON.parse(text);if(!list.length)return;const sheet=SpreadsheetApp.getActiveSheet();sheet.clear();const header=Object.keys(list[0]);const values=list.map(o=>header.map(h=>o[h]));sheet.getRange(1,1,1,header.length).setValues([header]);sheet.getRange(2,1,values.length,header.length).setValues(values);}",
+    "tags": ["spreadsheet","import","json","drive"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-090",
+    "title": "条件で行を色分け（優先度別）",
+    "description": "優先度列（B列）の値に応じて行背景色を変更します。",
+    "language": "gas",
+    "code": "function colorByPriority(){const sheet=SpreadsheetApp.getActiveSheet();const last=sheet.getLastRow();for(let r=2;r<=last;r++){const v=sheet.getRange(r,2).getValue();let color='#ffffff';if(v==='高')color='#ffccbc';else if(v==='中')color='#fff9c4';else if(v==='低')color='#c8e6c9';sheet.getRange(r,1,1,sheet.getLastColumn()).setBackground(color);}}",
+    "tags": ["spreadsheet","priority","color","format"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-091",
+    "title": "シートの変更をチャットワーク風ログに整形",
+    "description": "onEditで「ユーザー名: 内容」の形式でログを残します。",
+    "language": "gas",
+    "code": "function onEditChatStyleLog(e){const ss=SpreadsheetApp.getActiveSpreadsheet();const log=ss.getSheetByName('チャットログ')||ss.insertSheet('チャットログ');const user=Session.getActiveUser().getEmail();log.appendRow([new Date(),user,`${e.range.getSheet().getName()} ${e.range.getA1Notation()} ${e.oldValue||''} -> ${e.value||''}`]);}",
+    "tags": ["spreadsheet","onEdit","chat","log"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-092",
+    "title": "指定列をメールアドレス形式に強制",
+    "description": "A列の値を小文字に統一し、空白を削除します。",
+    "language": "gas",
+    "code": "function normalizeEmailColumn(){const sheet=SpreadsheetApp.getActiveSheet();const last=sheet.getLastRow();const range=sheet.getRange(2,1,last-1,1);const values=range.getValues().map(r=>{let v=String(r[0]||'').trim().toLowerCase();return [v];});range.setValues(values);}",
+    "tags": ["spreadsheet","email","normalize","cleanup"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-093",
+    "title": "文字数オーバーのセルを検知",
+    "description": "指定列で文字数が100文字を超えるセルを赤背景にします。",
+    "language": "gas",
+    "code": "function markTooLongText(){const sheet=SpreadsheetApp.getActiveSheet();const last=sheet.getLastRow();for(let r=2;r<=last;r++){const cell=sheet.getRange(r,2);const len=String(cell.getValue()||'').length;cell.setBackground(len>100?'#ffcdd2':'#ffffff');}}",
+    "tags": ["spreadsheet","length","validation","background"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-094",
+    "title": "URL列のリンク切れを簡易チェック",
+    "description": "URL列のリンクにHTTPリクエストを飛ばし、404などを判定します。",
+    "language": "gas",
+    "code": "function checkUrlStatus(){const sheet=SpreadsheetApp.getActiveSheet();const last=sheet.getLastRow();for(let r=2;r<=last;r++){const url=sheet.getRange(r,1).getValue();if(!url)continue;try{const res=UrlFetchApp.fetch(url,{muteHttpExceptions:true});sheet.getRange(r,2).setValue(res.getResponseCode());}catch(e){sheet.getRange(r,2).setValue('ERR');}}}",
+    "tags": ["spreadsheet","url","status","check"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-095",
+    "title": "列を別ブックにコピーして同期",
+    "description": "A列の値を別スプレッドシートのシートに上書きコピーします。",
+    "language": "gas",
+    "code": "function syncColumnToAnotherFile(){const srcSheet=SpreadsheetApp.getActiveSheet();const values=srcSheet.getRange('A1:A').getValues();const dst=SpreadsheetApp.openById('同期先ID').getSheetByName('データ');dst.getRange(1,1,values.length,1).setValues(values);}",
+    "tags": ["spreadsheet","sync","external","column"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-096",
+    "title": "行の状態を履歴シートにスナップショット保存",
+    "description": "選択中の行の内容を履歴シートの末尾にコピーします。",
+    "language": "gas",
+    "code": "function snapshotActiveRow(){const ss=SpreadsheetApp.getActiveSpreadsheet();const src=ss.getActiveSheet();const row=src.getActiveRange().getRow();const data=src.getRange(row,1,1,src.getLastColumn()).getValues()[0];const hist=ss.getSheetByName('スナップショット')||ss.insertSheet('スナップショット');hist.appendRow([new Date(),src.getName(),row].concat(data));}",
+    "tags": ["spreadsheet","snapshot","history","row"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-097",
+    "title": "セル変更をコメントとして自動追記",
+    "description": "onEditでセルのメモに変更履歴を追記します。",
+    "language": "gas",
+    "code": "function onEditAddNoteHistory(e){const cell=e.range;const oldNote=cell.getNote()||'';const line=`${Utilities.formatDate(new Date(),Session.getScriptTimeZone(),'MM/dd HH:mm')}: ${e.oldValue||''} -> ${e.value||''}`;cell.setNote((oldNote?oldNote+'\\n':'')+line);}",
+    "tags": ["spreadsheet","note","history","onEdit"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-098",
+    "title": "セルの書式を別セルからコピー",
+    "description": "選択セルの書式を別の範囲にコピーします。",
+    "language": "gas",
+    "code": "function copyFormatFromActive(){const sheet=SpreadsheetApp.getActiveSheet();const src=sheet.getActiveCell();const dst=sheet.getRange('A2:C10');src.copyFormatToRange(sheet,dst.getColumn(),dst.getLastColumn(),dst.getRow(),dst.getLastRow());}",
+    "tags": ["spreadsheet","format","copy","range"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-099",
+    "title": "セル内改行を別行に展開",
+    "description": "A列のセル内改行テキストを分割し、複数行として展開します。",
+    "language": "gas",
+    "code": "function splitLinesToRows(){const sheet=SpreadsheetApp.getActiveSheet();const last=sheet.getLastRow();for(let r=last;r>=2;r--){const text=String(sheet.getRange(r,1).getValue()||'');const parts=text.split(/\\r?\\n/);if(parts.length<=1)continue;sheet.getRange(r,1).setValue(parts[0]);for(let i=1;i<parts.length;i++){sheet.insertRowAfter(r+i-1);sheet.getRange(r+i,1).setValue(parts[i]);}}}",
+    "tags": ["spreadsheet","split","lines","rows"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "gas-spread-100",
+    "title": "行をJSON形式の文字列として1セルに保存",
+    "description": "アクティブ行をJSON文字列にシリアライズして隣のセルに保存します。",
+    "language": "gas",
+    "code": "function rowToJsonCell(){const sheet=SpreadsheetApp.getActiveSheet();const row=sheet.getActiveRange().getRow();const values=sheet.getRange(row,1,1,sheet.getLastColumn()).getValues()[0];const header=sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];const obj={};header.forEach((h,i)=>obj[h]=values[i]);const json=JSON.stringify(obj);sheet.getRange(row,sheet.getLastColumn()+1).setValue(json);}",
+    "tags": ["spreadsheet","json","row","serialize"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  }
+]
