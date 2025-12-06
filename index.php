@@ -158,6 +158,8 @@ $filteredSnippets = filter_snippets_by_tags($snippets, $searchTags);
 $filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
 $filteredSnippets = filter_snippets_by_language($filteredSnippets, $language);
 
+$totalSnippets = count($snippets);
+
 $hasSearch = $searchTags !== [] || trim($keyword) !== '' || trim($language) !== '';
 
 if (!$hasSearch) {
@@ -179,7 +181,9 @@ if (!$hasSearch) {
 <header class="site-header">
     <div class="container">
         <h1>サンプルコード集</h1>
-        <p class="description">複数言語のサンプルコードをタグで絞り込み検索できます。</p>
+        <p class="description">
+            複数言語のサンプルコードをタグで絞り込み検索できます。（全<?php echo number_format($totalSnippets); ?>件登録）
+        </p>
     </div>
 </header>
 
@@ -276,20 +280,33 @@ if (!$hasSearch) {
             </div>
 
             <?php if ($hasSearch): ?>
-                <p class="search-summary">次の条件で絞り込み中:
-                    <?php if ($searchTags !== []): ?>
-                        <span>タグ:</span>
-                        <?php foreach ($searchTags as $tag): ?>
-                            <span class="tag">#<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?></span>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                    <?php if (trim($keyword) !== ''): ?>
-                        <span class="keyword">キーワード: 「<?php echo htmlspecialchars($keyword, ENT_QUOTES, 'UTF-8'); ?>」</span>
-                    <?php endif; ?>
-                    <?php if (trim($language) !== ''): ?>
-                        <span class="keyword">言語: <?php echo htmlspecialchars($language, ENT_QUOTES, 'UTF-8'); ?></span>
-                    <?php endif; ?>
-                </p>
+                <div class="search-summary" aria-live="polite">
+                    <p class="search-summary__title">次の条件で絞り込み中:</p>
+                    <ul class="search-summary__list">
+                        <?php if (trim($language) !== ''): ?>
+                            <li class="search-summary__item">
+                                <span class="search-summary__label">言語</span>
+                                <span class="badge language"><?php echo htmlspecialchars($language, ENT_QUOTES, 'UTF-8'); ?></span>
+                            </li>
+                        <?php endif; ?>
+                        <?php if (trim($keyword) !== ''): ?>
+                            <li class="search-summary__item">
+                                <span class="search-summary__label">キーワード</span>
+                                <span class="search-summary__chip">「<?php echo htmlspecialchars($keyword, ENT_QUOTES, 'UTF-8'); ?>」</span>
+                            </li>
+                        <?php endif; ?>
+                        <?php if ($searchTags !== []): ?>
+                            <li class="search-summary__item">
+                                <span class="search-summary__label">タグ</span>
+                                <span class="search-summary__chips">
+                                    <?php foreach ($searchTags as $tag): ?>
+                                        <span class="tag">#<?php echo htmlspecialchars($tag, ENT_QUOTES, 'UTF-8'); ?></span>
+                                    <?php endforeach; ?>
+                                </span>
+                            </li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
             <?php endif; ?>
 
             <section class="snippets">
