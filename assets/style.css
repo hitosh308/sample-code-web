@@ -148,6 +148,7 @@ body {
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 20px 60px rgba(15, 23, 42, 0.06);
+  min-width: 0;
 }
 
 .content-bar {
@@ -545,6 +546,7 @@ body {
   color: inherit;
   padding: 16px;
   overflow-x: auto;
+  white-space: pre;
   font-family: 'Fira Code', 'Source Code Pro', Consolas, monospace;
   font-size: 14px;
   margin: 0;
@@ -555,7 +557,7 @@ body {
   display: block;
   width: 100%;
   min-width: 0;
-  word-break: break-word;
+  word-break: normal;
 }
 
 .code-block::before {
