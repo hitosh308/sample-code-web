@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "title": "PHPのfor文",
+    "description": "基本的なforループの使い方を示すサンプルです。",
+    "language": "PHP",
+    "code": "<?php\nfor ($i = 0; $i < 5; $i++) {\n    echo $i . \"\\n\";\n}\n",
+    "tags": ["php", "for", "loop"],
+    "created_at": "2024-05-01 10:00:00",
+    "updated_at": "2024-05-01 10:00:00"
+  },
+  {
+    "id": 2,
+    "title": "JavaScriptの配列ループ",
+    "description": "forEachで配列をループする例です。",
+    "language": "JavaScript",
+    "code": "const items = ['apple', 'banana', 'cherry'];\nitems.forEach((item, index) => {\n  console.log(index, item);\n});\n",
+    "tags": ["javascript", "foreach", "loop"],
+    "created_at": "2024-06-15 09:30:00",
+    "updated_at": "2024-06-15 09:30:00"
+  }
+]
