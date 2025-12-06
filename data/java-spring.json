@@ -1,0 +1,1002 @@
+[
+  {
+    "id": "java-spring-1",
+    "title": "ページング付き一覧API(Pageable)の実装",
+    "description": "Spring Data JPAのPageableを使ったページング付き一覧APIのサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.user;\n\nimport org.springframework.data.domain.Page;\nimport org.springframework.data.domain.Pageable;\nimport org.springframework.data.jpa.repository.JpaRepository;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.GeneratedValue;\nimport jakarta.persistence.Id;\n\n@Entity\npublic class User {\n\n    @Id\n    @GeneratedValue\n    private Long id;\n\n    private String name;\n\n    private String email;\n\n    // getter/setter省略\n}\n\ninterface UserRepository extends JpaRepository<User, Long> {\n}\n\n@RestController\n@RequestMapping(\"/api/users\")\nclass UserController {\n\n    private final UserRepository userRepository;\n\n    UserController(UserRepository userRepository) {\n        this.userRepository = userRepository;\n    }\n\n    // /api/users?page=0&size=20&sort=id,desc\n    @GetMapping\n    public Page<User> list(Pageable pageable) {\n        return userRepository.findAll(pageable);\n    }\n}\n",
+    "tags": ["spring boot", "jpa", "pageable", "paging"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-2",
+    "title": "動的検索条件(JPA Specification)のサンプル",
+    "description": "検索条件が可変なREST APIでJPA Specificationを使って動的にクエリを組み立てる例です。",
+    "language": "Java",
+    "code": "package com.example.demo.search;\n\nimport org.springframework.data.jpa.domain.Specification;\nimport org.springframework.data.jpa.repository.JpaSpecificationExecutor;\nimport org.springframework.data.jpa.repository.JpaRepository;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.GeneratedValue;\nimport jakarta.persistence.Id;\n\nimport java.util.List;\n\n@Entity\nclass Product {\n\n    @Id\n    @GeneratedValue\n    private Long id;\n\n    private String name;\n\n    private String category;\n\n    private Integer price;\n\n    // getter/setter省略\n}\n\ninterface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {\n}\n\nclass ProductSpecifications {\n\n    public static Specification<Product> nameContains(String keyword) {\n        return (root, query, cb) -> keyword == null || keyword.isBlank()\n                ? null\n                : cb.like(root.get(\"name\"), \"%\" + keyword + \"%\");\n    }\n\n    public static Specification<Product> categoryEquals(String category) {\n        return (root, query, cb) -> category == null || category.isBlank()\n                ? null\n                : cb.equal(root.get(\"category\"), category);\n    }\n\n    public static Specification<Product> priceLessThanOrEqual(Integer priceMax) {\n        return (root, query, cb) -> priceMax == null ? null : cb.le(root.get(\"price\"), priceMax);\n    }\n}\n\n@RestController\n@RequestMapping(\"/api/products\")\nclass ProductSearchController {\n\n    private final ProductRepository productRepository;\n\n    ProductSearchController(ProductRepository productRepository) {\n        this.productRepository = productRepository;\n    }\n\n    @GetMapping\n    public List<Product> search(@RequestParam(required = false) String keyword,\n                                @RequestParam(required = false) String category,\n                                @RequestParam(required = false) Integer priceMax) {\n        Specification<Product> spec = Specification\n                .where(ProductSpecifications.nameContains(keyword))\n                .and(ProductSpecifications.categoryEquals(category))\n                .and(ProductSpecifications.priceLessThanOrEqual(priceMax));\n\n        return productRepository.findAll(spec);\n    }\n}\n",
+    "tags": ["spring boot", "jpa", "specification", "dynamic query"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-3",
+    "title": "ソート + ページングのデフォルト設定",
+    "description": "PageableHandlerMethodArgumentResolverCustomizerでページングのデフォルト値を設定する例です。",
+    "language": "Java",
+    "code": "package com.example.demo.config;\n\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.data.domain.Sort;\nimport org.springframework.data.web.config.PageableHandlerMethodArgumentResolverCustomizer;\nimport org.springframework.context.annotation.Bean;\n\n@Configuration\npublic class PageableConfig {\n\n    @Bean\n    public PageableHandlerMethodArgumentResolverCustomizer customizePageable() {\n        return resolver -> {\n            resolver.setOneIndexedParameters(true); // page=1 始まり\n            resolver.setMaxPageSize(100);\n            resolver.setFallbackPageable(org.springframework.data.domain.PageRequest.of(0, 20, Sort.by(\"id\").descending()));\n        };\n    }\n}\n",
+    "tags": ["spring boot", "pageable", "config"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-4",
+    "title": "DTOプロジェクションを返すRepository",
+    "description": "一覧APIでエンティティそのものではなく軽量DTOを返すためのインターフェースベースプロジェクションの例です。",
+    "language": "Java",
+    "code": "package com.example.demo.projection;\n\nimport org.springframework.data.jpa.repository.JpaRepository;\nimport org.springframework.data.jpa.repository.Query;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.GeneratedValue;\nimport jakarta.persistence.Id;\n\nimport java.util.List;\n\n@Entity\nclass Article {\n\n    @Id\n    @GeneratedValue\n    private Long id;\n\n    private String title;\n\n    private String body;\n\n    private String authorName;\n\n    // getter/setter省略\n}\n\ninterface ArticleSummary {\n    Long getId();\n    String getTitle();\n    String getAuthorName();\n}\n\ninterface ArticleRepository extends JpaRepository<Article, Long> {\n\n    @Query(\"select a.id as id, a.title as title, a.authorName as authorName from Article a\")\n    List<ArticleSummary> findAllSummary();\n}\n\n@RestController\n@RequestMapping(\"/api/articles\")\nclass ArticleController {\n\n    private final ArticleRepository articleRepository;\n\n    ArticleController(ArticleRepository articleRepository) {\n        this.articleRepository = articleRepository;\n    }\n\n    @GetMapping(\"/summary\")\n    public List<ArticleSummary> listSummary() {\n        return articleRepository.findAllSummary();\n    }\n}\n",
+    "tags": ["spring boot", "jpa", "projection", "dto"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-5",
+    "title": "ソフトデリート(削除フラグ + @Where)",
+    "description": "論理削除用の削除フラグと@Whereを使って、通常の検索からは削除済みデータを除外するサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.softdelete;\n\nimport org.hibernate.annotations.Where;\nimport org.springframework.data.jpa.repository.JpaRepository;\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.GeneratedValue;\nimport jakarta.persistence.Id;\n\nimport java.time.LocalDateTime;\n\n@Entity\n@Where(clause = \"deleted = false\")\nclass Customer {\n\n    @Id\n    @GeneratedValue\n    private Long id;\n\n    private String name;\n\n    private boolean deleted = false;\n\n    private LocalDateTime deletedAt;\n\n    // getter/setter省略\n}\n\ninterface CustomerRepository extends JpaRepository<Customer, Long> {\n}\n\n@Service\nclass CustomerService {\n\n    private final CustomerRepository customerRepository;\n\n    CustomerService(CustomerRepository customerRepository) {\n        this.customerRepository = customerRepository;\n    }\n\n    @Transactional\n    public void softDelete(Long id) {\n        Customer customer = customerRepository.findById(id)\n                .orElseThrow(() -> new IllegalArgumentException(\"customer not found\"));\n        customer.setDeleted(true);\n        customer.setDeletedAt(LocalDateTime.now());\n    }\n}\n",
+    "tags": ["spring boot", "jpa", "soft delete", "where"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-6",
+    "title": "JPA監査フィールド(@CreatedDate, @LastModifiedDate)",
+    "description": "作成日時と更新日時を自動で設定するJPA Auditingのサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.audit;\n\nimport org.springframework.data.annotation.CreatedDate;\nimport org.springframework.data.annotation.LastModifiedDate;\nimport org.springframework.data.jpa.domain.support.AuditingEntityListener;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.data.jpa.repository.config.EnableJpaAuditing;\n\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.EntityListeners;\nimport jakarta.persistence.GeneratedValue;\nimport jakarta.persistence.Id;\nimport java.time.LocalDateTime;\n\n@Configuration\n@EnableJpaAuditing\nclass JpaAuditConfig {\n}\n\n@Entity\n@EntityListeners(AuditingEntityListener.class)\nclass AuditEntity {\n\n    @Id\n    @GeneratedValue\n    private Long id;\n\n    private String value;\n\n    @CreatedDate\n    private LocalDateTime createdAt;\n\n    @LastModifiedDate\n    private LocalDateTime updatedAt;\n\n    // getter/setter省略\n}\n",
+    "tags": ["spring boot", "jpa", "auditing", "createdDate"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-7",
+    "title": "楽観ロック(@Version)で更新競合を検知",
+    "description": "同時更新による上書きを防ぐために@Versionを利用するサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.lock;\n\nimport org.springframework.data.jpa.repository.JpaRepository;\nimport org.springframework.orm.ObjectOptimisticLockingFailureException;\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.GeneratedValue;\nimport jakarta.persistence.Id;\nimport jakarta.persistence.Version;\n\n@Entity\nclass Account {\n\n    @Id\n    @GeneratedValue\n    private Long id;\n\n    private Long balance;\n\n    @Version\n    private Long version;\n\n    // getter/setter省略\n}\n\ninterface AccountRepository extends JpaRepository<Account, Long> {\n}\n\n@Service\nclass AccountService {\n\n    private final AccountRepository accountRepository;\n\n    AccountService(AccountRepository accountRepository) {\n        this.accountRepository = accountRepository;\n    }\n\n    @Transactional\n    public void withdraw(Long accountId, long amount) {\n        try {\n            Account account = accountRepository.findById(accountId)\n                    .orElseThrow(() -> new IllegalArgumentException(\"account not found\"));\n            if (account.getBalance() < amount) {\n                throw new IllegalStateException(\"insufficient balance\");\n            }\n            account.setBalance(account.getBalance() - amount);\n        } catch (ObjectOptimisticLockingFailureException e) {\n            // 競合した場合のリトライやエラー変換はここで行う\n            throw e;\n        }\n    }\n}\n",
+    "tags": ["spring boot", "jpa", "optimistic locking", "version"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-8",
+    "title": "悲観ロックで在庫数を安全に更新",
+    "description": "在庫数を更新する際にPESSIMISTIC_WRITEロックを取得するサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.stock;\n\nimport org.springframework.data.jpa.repository.JpaRepository;\nimport org.springframework.data.jpa.repository.Lock;\nimport org.springframework.data.jpa.repository.Query;\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.GeneratedValue;\nimport jakarta.persistence.Id;\nimport jakarta.persistence.LockModeType;\n\n@Entity\nclass Stock {\n\n    @Id\n    @GeneratedValue\n    private Long id;\n\n    private String sku;\n\n    private Long quantity;\n\n    // getter/setter省略\n}\n\ninterface StockRepository extends JpaRepository<Stock, Long> {\n\n    @Lock(LockModeType.PESSIMISTIC_WRITE)\n    @Query(\"select s from Stock s where s.sku = :sku\")\n    Stock findBySkuForUpdate(String sku);\n}\n\n@Service\nclass StockService {\n\n    private final StockRepository stockRepository;\n\n    StockService(StockRepository stockRepository) {\n        this.stockRepository = stockRepository;\n    }\n\n    @Transactional\n    public void reserve(String sku, long quantity) {\n        Stock stock = stockRepository.findBySkuForUpdate(sku);\n        if (stock.getQuantity() < quantity) {\n            throw new IllegalStateException(\"no stock\");\n        }\n        stock.setQuantity(stock.getQuantity() - quantity);\n    }\n}\n",
+    "tags": ["spring boot", "jpa", "pessimistic lock", "stock"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-9",
+    "title": "一括更新(@Modifyingクエリ)",
+    "description": "更新日時を条件に古いデータを一括でステータス変更する例です。",
+    "language": "Java",
+    "code": "package com.example.demo.bulk;\n\nimport org.springframework.data.jpa.repository.JpaRepository;\nimport org.springframework.data.jpa.repository.Modifying;\nimport org.springframework.data.jpa.repository.Query;\nimport org.springframework.stereotype.Repository;\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.GeneratedValue;\nimport jakarta.persistence.Id;\n\nimport java.time.LocalDateTime;\n\n@Entity\nclass Notification {\n\n    @Id\n    @GeneratedValue\n    private Long id;\n\n    private String message;\n\n    private String status; // NEW, SENT, EXPIRED\n\n    private LocalDateTime createdAt;\n\n    // getter/setter省略\n}\n\n@Repository\ninterface NotificationRepository extends JpaRepository<Notification, Long> {\n\n    @Modifying\n    @Query(\"update Notification n set n.status = 'EXPIRED' where n.status = 'NEW' and n.createdAt < :threshold\")\n    int expireOld(LocalDateTime threshold);\n}\n\n@Service\nclass NotificationService {\n\n    private final NotificationRepository notificationRepository;\n\n    NotificationService(NotificationRepository notificationRepository) {\n        this.notificationRepository = notificationRepository;\n    }\n\n    @Transactional\n    public int expireOldNotifications(LocalDateTime threshold) {\n        return notificationRepository.expireOld(threshold);\n    }\n}\n",
+    "tags": ["spring boot", "jpa", "bulk update", "modifying"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-10",
+    "title": "JSON列をObjectにマッピングするAttributeConverter",
+    "description": "RDBのTEXT(JSON)カラムをJavaオブジェクトにシリアライズ/デシリアライズする例です。",
+    "language": "Java",
+    "code": "package com.example.demo.jsoncolumn;\n\nimport com.fasterxml.jackson.core.JsonProcessingException;\nimport com.fasterxml.jackson.databind.ObjectMapper;\nimport jakarta.persistence.AttributeConverter;\nimport jakarta.persistence.Converter;\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.GeneratedValue;\nimport jakarta.persistence.Id;\n\nimport java.util.Map;\n\n@Converter\npublic class JsonMapConverter implements AttributeConverter<Map<String, Object>, String> {\n\n    private static final ObjectMapper objectMapper = new ObjectMapper();\n\n    @Override\n    public String convertToDatabaseColumn(Map<String, Object> attribute) {\n        if (attribute == null) return null;\n        try {\n            return objectMapper.writeValueAsString(attribute);\n        } catch (JsonProcessingException e) {\n            throw new IllegalArgumentException(\"failed to serialize json\", e);\n        }\n    }\n\n    @Override\n    public Map<String, Object> convertToEntityAttribute(String dbData) {\n        if (dbData == null) return null;\n        try {\n            return objectMapper.readValue(dbData, Map.class);\n        } catch (Exception e) {\n            throw new IllegalArgumentException(\"failed to deserialize json\", e);\n        }\n    }\n}\n\n@Entity\nclass JsonLog {\n\n    @Id\n    @GeneratedValue\n    private Long id;\n\n    private String type;\n\n    @jakarta.persistence.Convert(converter = JsonMapConverter.class)\n    private Map<String, Object> payload;\n\n    // getter/setter省略\n}\n",
+    "tags": ["spring boot", "jpa", "json", "attribute converter"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-11",
+    "title": "Enumコード変換用AttributeConverter",
+    "description": "DBにはコード(文字列)として保存し、アプリ上ではEnumとして扱うためのコンバータ例です。",
+    "language": "Java",
+    "code": "package com.example.demo.enumcode;\n\nimport jakarta.persistence.AttributeConverter;\nimport jakarta.persistence.Converter;\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.GeneratedValue;\nimport jakarta.persistence.Id;\n\nenum OrderStatus {\n    NEW(\"N\"),\n    PAID(\"P\"),\n    CANCELED(\"C\");\n\n    private final String code;\n\n    OrderStatus(String code) { this.code = code; }\n\n    public String getCode() { return code; }\n\n    public static OrderStatus fromCode(String code) {\n        for (OrderStatus s : values()) {\n            if (s.code.equals(code)) return s;\n        }\n        throw new IllegalArgumentException(\"unknown code: \" + code);\n    }\n}\n\n@Converter(autoApply = true)\nclass OrderStatusConverter implements AttributeConverter<OrderStatus, String> {\n\n    @Override\n    public String convertToDatabaseColumn(OrderStatus attribute) {\n        return attribute == null ? null : attribute.getCode();\n    }\n\n    @Override\n    public OrderStatus convertToEntityAttribute(String dbData) {\n        return dbData == null ? null : OrderStatus.fromCode(dbData);\n    }\n}\n\n@Entity\nclass OrderEntity {\n\n    @Id\n    @GeneratedValue\n    private Long id;\n\n    private OrderStatus status;\n\n    // getter/setter省略\n}\n",
+    "tags": ["spring boot", "jpa", "enum", "attribute converter"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-12",
+    "title": "サービスレイヤのトランザクション管理",
+    "description": "サービス層に@Transactionalを付与してまとめてロールバックさせる典型パターンです。",
+    "language": "Java",
+    "code": "package com.example.demo.tx;\n\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class OrderService {\n\n    private final OrderRepository orderRepository;\n    private final PaymentGateway paymentGateway;\n\n    public OrderService(OrderRepository orderRepository, PaymentGateway paymentGateway) {\n        this.orderRepository = orderRepository;\n        this.paymentGateway = paymentGateway;\n    }\n\n    @Transactional\n    public void placeOrder(PlaceOrderCommand command) {\n        Order order = new Order(command.getUserId(), command.getItems());\n        orderRepository.save(order);\n\n        // 外部APIの失敗で例外が投げられた場合、注文登録もロールバックされる\n        paymentGateway.charge(order.getId(), order.getTotalAmount());\n\n        order.markPaid();\n    }\n}\n\n// OrderRepository, PaymentGateway, PlaceOrderCommand, Order は適宜定義\n",
+    "tags": ["spring boot", "transaction", "service layer"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-13",
+    "title": "非同期メール送信(@Async)",
+    "description": "ユーザー登録時にメール送信を非同期で実行するサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.asyncmail;\n\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.scheduling.annotation.Async;\nimport org.springframework.scheduling.annotation.EnableAsync;\nimport org.springframework.stereotype.Service;\n\n@Configuration\n@EnableAsync\nclass AsyncConfig {\n}\n\n@Service\nclass MailService {\n\n    @Async\n    public void sendWelcomeMail(String email) {\n        // 実際はJavaMailSenderなどを利用\n        System.out.println(\"send mail to: \" + email + \" thread=\" + Thread.currentThread().getName());\n    }\n}\n\n@Service\nclass UserRegistrationService {\n\n    private final MailService mailService;\n\n    UserRegistrationService(MailService mailService) {\n        this.mailService = mailService;\n    }\n\n    public void register(String email) {\n        // ユーザー登録処理...\n        mailService.sendWelcomeMail(email); // 非同期送信\n    }\n}\n",
+    "tags": ["spring boot", "async", "mail", "enable async"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-14",
+    "title": "一括登録バッチ(@Transactional + saveAll)",
+    "description": "CSVなどから読み込んだデータを一括で登録する簡易バッチ処理の例です。",
+    "language": "Java",
+    "code": "package com.example.demo.batch;\n\nimport org.springframework.data.jpa.repository.JpaRepository;\nimport org.springframework.stereotype.Repository;\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.GeneratedValue;\nimport jakarta.persistence.Id;\n\nimport java.util.List;\n\n@Entity\nclass ImportItem {\n\n    @Id\n    @GeneratedValue\n    private Long id;\n\n    private String code;\n\n    private String name;\n\n    // getter/setter省略\n}\n\n@Repository\ninterface ImportItemRepository extends JpaRepository<ImportItem, Long> {\n}\n\n@Service\nclass ImportService {\n\n    private final ImportItemRepository importItemRepository;\n\n    ImportService(ImportItemRepository importItemRepository) {\n        this.importItemRepository = importItemRepository;\n    }\n\n    @Transactional\n    public void importItems(List<ImportItem> items) {\n        importItemRepository.saveAll(items);\n    }\n}\n",
+    "tags": ["spring boot", "batch", "transaction", "saveAll"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-15",
+    "title": "スケジュール実行(@Scheduled cron)",
+    "description": "毎分定期的にキューの処理を行うジョブのサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.scheduled;\n\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.scheduling.annotation.EnableScheduling;\nimport org.springframework.scheduling.annotation.Scheduled;\nimport org.springframework.stereotype.Component;\n\n@Configuration\n@EnableScheduling\nclass SchedulingConfig {\n}\n\n@Component\nclass QueueProcessorJob {\n\n    @Scheduled(cron = \"0 * * * * *\") // 毎分0秒\n    public void processQueue() {\n        // キューのポーリングと処理\n        System.out.println(\"process queue at \" + java.time.LocalDateTime.now());\n    }\n}\n",
+    "tags": ["spring boot", "scheduled", "cron", "batch"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-16",
+    "title": "spring-retryで外部APIをリトライ",
+    "description": "一時的なネットワークエラーに対してリトライする実用的なパターンです。",
+    "language": "Java",
+    "code": "package com.example.demo.retry;\n\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.retry.annotation.Backoff;\nimport org.springframework.retry.annotation.EnableRetry;\nimport org.springframework.retry.annotation.Retryable;\nimport org.springframework.stereotype.Service;\n\n@Configuration\n@EnableRetry\nclass RetryConfig {\n}\n\n@Service\nclass ExternalApiClient {\n\n    @Retryable(\n            value = {java.io.IOException.class},\n            maxAttempts = 3,\n            backoff = @Backoff(delay = 1000, multiplier = 2.0)\n    )\n    public String call() throws java.io.IOException {\n        // 実際はRestTemplateやWebClientを使う\n        if (Math.random() < 0.7) {\n            throw new java.io.IOException(\"temporary error\");\n        }\n        return \"ok\";\n    }\n}\n",
+    "tags": ["spring boot", "spring retry", "external api", "backoff"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-17",
+    "title": "WebClientで外部API呼び出し + タイムアウト設定",
+    "description": "非同期HTTPクライアントWebClientを利用してタイムアウト付きで外部APIを呼び出す例です。",
+    "language": "Java",
+    "code": "package com.example.demo.webclient;\n\nimport io.netty.channel.ChannelOption;\nimport io.netty.handler.timeout.ReadTimeoutHandler;\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.web.reactive.function.client.WebClient;\nimport reactor.netty.http.client.HttpClient;\n\nimport java.time.Duration;\n\n@Configuration\npublic class WebClientConfig {\n\n    @Bean\n    public WebClient externalWebClient() {\n        HttpClient httpClient = HttpClient.create()\n                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000)\n                .responseTimeout(Duration.ofSeconds(5))\n                .doOnConnected(conn -> conn.addHandlerLast(new ReadTimeoutHandler(5)));\n\n        return WebClient.builder()\n                .baseUrl(\"https://api.example.com\")\n                .clientConnector(new org.springframework.http.client.reactive.ReactorClientHttpConnector(httpClient))\n                .build();\n    }\n}\n\n// 使用例\n//@Service\n//class ExternalService {\n//    private final WebClient externalWebClient;\n//\n//    ExternalService(WebClient externalWebClient) {\n//        this.externalWebClient = externalWebClient;\n//    }\n//\n//    public Mono<String> getData() {\n//        return externalWebClient.get().uri(\"/data\")\n//                .retrieve()\n//                .bodyToMono(String.class);\n//    }\n//}\n",
+    "tags": ["spring boot", "webclient", "timeout", "reactor"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-18",
+    "title": "RestTemplateでPOST + エラーハンドリング",
+    "description": "RestTemplateでPOSTリクエストを送り、エラーコードに応じて例外を投げ直す例です。",
+    "language": "Java",
+    "code": "package com.example.demo.resttemplate;\n\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.client.DefaultResponseErrorHandler;\nimport org.springframework.web.client.RestTemplate;\n\nimport java.io.IOException;\n\n@Configuration\npublic class RestTemplateConfig {\n\n    @Bean\n    public RestTemplate restTemplate() {\n        RestTemplate restTemplate = new RestTemplate();\n        restTemplate.setErrorHandler(new DefaultResponseErrorHandler() {\n            @Override\n            public void handleError(ClientHttpResponse response) throws IOException {\n                if (response.getStatusCode().series() == HttpStatus.Series.SERVER_ERROR) {\n                    // 5xxはそのまま例外\n                    super.handleError(response);\n                }\n                // 4xxは独自例外に変換するなど\n            }\n        });\n        return restTemplate;\n    }\n\n    public void postExample(RestTemplate restTemplate) {\n        ResponseEntity<String> res = restTemplate.postForEntity(\"https://api.example.com/pay\", new Object(), String.class);\n        if (res.getStatusCode() != HttpStatus.OK) {\n            throw new IllegalStateException(\"payment failed: \" + res.getStatusCode());\n        }\n    }\n}\n",
+    "tags": ["spring boot", "resttemplate", "error handling", "post"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-19",
+    "title": "OpenFeignクライアント定義",
+    "description": "マイクロサービス間通信でよく使うOpenFeignクライアントの定義例です。",
+    "language": "Java",
+    "code": "package com.example.demo.feign;\n\nimport org.springframework.cloud.openfeign.EnableFeignClients;\nimport org.springframework.cloud.openfeign.FeignClient;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.PathVariable;\n\n@Configuration\n@EnableFeignClients\nclass FeignConfig {\n}\n\n@FeignClient(name = \"user-service\", url = \"https://user.example.com\")\ninterface UserClient {\n\n    @GetMapping(\"/api/users/{id}\")\n    UserResponse getUser(@PathVariable(\"id\") Long id);\n}\n\nclass UserResponse {\n    private Long id;\n    private String name;\n    // getter/setter省略\n}\n",
+    "tags": ["spring boot", "feign", "microservice", "http client"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-20",
+    "title": "グローバル例外ハンドラで共通エラー形式を返す",
+    "description": "API全体で共通のエラーレスポンスJSONを返すための@RestControllerAdviceの例です。",
+    "language": "Java",
+    "code": "package com.example.demo.error;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.validation.FieldError;\nimport org.springframework.web.bind.MethodArgumentNotValidException;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\nimport java.time.LocalDateTime;\nimport java.util.List;\n\n@RestControllerAdvice\npublic class ApiExceptionHandler {\n\n    record ErrorResponse(LocalDateTime timestamp, int status, String error, String message, List<String> details) {}\n\n    @ExceptionHandler(MethodArgumentNotValidException.class)\n    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {\n        List<String> details = ex.getBindingResult().getFieldErrors().stream()\n                .map(this::formatFieldError)\n                .toList();\n        ErrorResponse res = new ErrorResponse(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(),\n                \"ValidationError\", \"validation failed\", details);\n        return ResponseEntity.badRequest().body(res);\n    }\n\n    @ExceptionHandler(IllegalArgumentException.class)\n    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {\n        ErrorResponse res = new ErrorResponse(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(),\n                \"IllegalArgument\", ex.getMessage(), List.of());\n        return ResponseEntity.badRequest().body(res);\n    }\n\n    private String formatFieldError(FieldError e) {\n        return e.getField() + \" \" + e.getDefaultMessage();\n    }\n}\n",
+    "tags": ["spring boot", "exception handler", "restcontrolleradvice", "validation"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-21",
+    "title": "ログ相関IDをFilter + MDCで設定",
+    "description": "リクエストごとの相関ID(correlationId)を生成し、MDCに格納してログに出力するパターンです。",
+    "language": "Java",
+    "code": "package com.example.demo.logging;\n\nimport jakarta.servlet.FilterChain;\nimport jakarta.servlet.ServletException;\nimport jakarta.servlet.http.HttpServletRequest;\nimport jakarta.servlet.http.HttpServletResponse;\nimport org.slf4j.MDC;\nimport org.springframework.stereotype.Component;\nimport org.springframework.web.filter.OncePerRequestFilter;\n\nimport java.io.IOException;\nimport java.util.UUID;\n\n@Component\npublic class CorrelationIdFilter extends OncePerRequestFilter {\n\n    public static final String CORRELATION_ID_KEY = \"X-Correlation-Id\";\n\n    @Override\n    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)\n            throws ServletException, IOException {\n        String correlationId = request.getHeader(CORRELATION_ID_KEY);\n        if (correlationId == null || correlationId.isBlank()) {\n            correlationId = UUID.randomUUID().toString();\n        }\n        MDC.put(\"correlationId\", correlationId);\n        response.addHeader(CORRELATION_ID_KEY, correlationId);\n        try {\n            filterChain.doFilter(request, response);\n        } finally {\n            MDC.remove(\"correlationId\");\n        }\n    }\n}\n\n// logback.xml側で %X{correlationId} をパターンに含める\n",
+    "tags": ["spring boot", "logging", "mdc", "filter"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-22",
+    "title": "HandlerInterceptorでリクエストログを収集",
+    "description": "URL, メソッド, 処理時間などをInterceptorで計測してログ出力する例です。",
+    "language": "Java",
+    "code": "package com.example.demo.interceptor;\n\nimport jakarta.servlet.http.HttpServletRequest;\nimport jakarta.servlet.http.HttpServletResponse;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Component;\nimport org.springframework.web.servlet.HandlerInterceptor;\nimport org.springframework.web.servlet.config.annotation.InterceptorRegistry;\nimport org.springframework.web.servlet.config.annotation.WebMvcConfigurer;\n\n@Component\nclass RequestLoggingInterceptor implements HandlerInterceptor {\n\n    private static final Logger log = LoggerFactory.getLogger(RequestLoggingInterceptor.class);\n\n    private static final String ATTR_START = \"requestStartTime\";\n\n    @Override\n    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {\n        request.setAttribute(ATTR_START, System.currentTimeMillis());\n        return true;\n    }\n\n    @Override\n    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {\n        Long start = (Long) request.getAttribute(ATTR_START);\n        long elapsed = start == null ? -1 : System.currentTimeMillis() - start;\n        log.info(\"{} {} => {} ({}ms)\", request.getMethod(), request.getRequestURI(), response.getStatus(), elapsed);\n    }\n}\n\n@Component\nclass WebConfig implements WebMvcConfigurer {\n\n    private final RequestLoggingInterceptor interceptor;\n\n    WebConfig(RequestLoggingInterceptor interceptor) {\n        this.interceptor = interceptor;\n    }\n\n    @Override\n    public void addInterceptors(InterceptorRegistry registry) {\n        registry.addInterceptor(interceptor).addPathPatterns(\"/api/**\");\n    }\n}\n",
+    "tags": ["spring boot", "interceptor", "logging", "performance"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-23",
+    "title": "メソッド実行時間計測用AOP",
+    "description": "@LogExecutionTimeアノテーションでメソッドの処理時間をログ出力するサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.aop;\n\nimport org.aspectj.lang.ProceedingJoinPoint;\nimport org.aspectj.lang.annotation.Around;\nimport org.aspectj.lang.annotation.Aspect;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.stereotype.Component;\n\nimport java.lang.annotation.ElementType;\nimport java.lang.annotation.Retention;\nimport java.lang.annotation.RetentionPolicy;\nimport java.lang.annotation.Target;\n\n@Target(ElementType.METHOD)\n@Retention(RetentionPolicy.RUNTIME)\npublic @interface LogExecutionTime {\n}\n\n@Aspect\n@Component\nclass LogExecutionTimeAspect {\n\n    private static final Logger log = LoggerFactory.getLogger(LogExecutionTimeAspect.class);\n\n    @Around(\"@annotation(com.example.demo.aop.LogExecutionTime)\")\n    public Object log(ProceedingJoinPoint pjp) throws Throwable {\n        long start = System.currentTimeMillis();\n        try {\n            return pjp.proceed();\n        } finally {\n            long elapsed = System.currentTimeMillis() - start;\n            log.info(\"{} executed in {} ms\", pjp.getSignature(), elapsed);\n        }\n    }\n}\n",
+    "tags": ["spring boot", "aop", "performance", "logging"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-24",
+    "title": "@ConfigurationPropertiesで設定値を型安全にバインド",
+    "description": "application.ymlの階層構造をクラスにバインドして使う典型パターンです。",
+    "language": "Java",
+    "code": "package com.example.demo.configprops;\n\nimport org.springframework.boot.context.properties.ConfigurationProperties;\nimport org.springframework.boot.context.properties.EnableConfigurationProperties;\nimport org.springframework.context.annotation.Configuration;\n\nimport java.util.List;\n\n@Configuration\n@EnableConfigurationProperties(AppProperties.class)\nclass ConfigPropsConfig {\n}\n\n@ConfigurationProperties(prefix = \"app\")\nclass AppProperties {\n\n    private String name;\n    private String version;\n    private List<String> admins;\n\n    // getter/setter省略\n}\n\n// application.yml 例\n// app:\n//   name: sample-api\n//   version: 1.0.0\n//   admins:\n//     - admin1@example.com\n//     - admin2@example.com\n",
+    "tags": ["spring boot", "configurationproperties", "config", "yaml"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-25",
+    "title": "@Profileで環境別Bean定義",
+    "description": "local用のダミー実装とprod用の本番実装を@Profileで切り替える例です。",
+    "language": "Java",
+    "code": "package com.example.demo.profile;\n\nimport org.springframework.context.annotation.Profile;\nimport org.springframework.stereotype.Service;\n\npublic interface PaymentClient {\n    void pay(long amount);\n}\n\n@Service\n@Profile(\"local\")\nclass DummyPaymentClient implements PaymentClient {\n    @Override\n    public void pay(long amount) {\n        System.out.println(\"dummy pay: \" + amount);\n    }\n}\n\n@Service\n@Profile(\"prod\")\nclass RealPaymentClient implements PaymentClient {\n    @Override\n    public void pay(long amount) {\n        // 実際の外部決済サービスとの連携\n    }\n}\n",
+    "tags": ["spring boot", "profile", "bean", "environment"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-26",
+    "title": "環境別CORS設定(localだけ全許可)",
+    "description": "ローカル環境(localプロファイル)のみCORSを緩める設定例です。",
+    "language": "Java",
+    "code": "package com.example.demo.cors;\n\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.context.annotation.Profile;\nimport org.springframework.web.servlet.config.annotation.CorsRegistry;\nimport org.springframework.web.servlet.config.annotation.WebMvcConfigurer;\n\n@Configuration\n@Profile(\"local\")\npublic class LocalCorsConfig implements WebMvcConfigurer {\n\n    @Override\n    public void addCorsMappings(CorsRegistry registry) {\n        registry.addMapping(\"/api/**\")\n                .allowedOrigins(\"http://localhost:3000\")\n                .allowedMethods(\"GET\", \"POST\", \"PUT\", \"DELETE\", \"PATCH\")\n                .allowCredentials(true);\n    }\n}\n",
+    "tags": ["spring boot", "cors", "webmvc", "profile"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-27",
+    "title": "マルチパートファイルアップロードAPI",
+    "description": "画像ファイルを受け取り、一時ディレクトリに保存するREST APIの例です。",
+    "language": "Java",
+    "code": "package com.example.demo.upload;\n\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.util.StringUtils;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\nimport org.springframework.web.multipart.MultipartFile;\n\nimport java.io.IOException;\nimport java.nio.file.Files;\nimport java.nio.file.Path;\nimport java.nio.file.StandardCopyOption;\n\n@RestController\n@RequestMapping(\"/api/files\")\npublic class FileUploadController {\n\n    @PostMapping(\"/upload\")\n    public ResponseEntity<String> upload(@RequestParam(\"file\") MultipartFile file) throws IOException {\n        String filename = StringUtils.cleanPath(file.getOriginalFilename());\n        Path tempDir = Files.createTempDirectory(\"upload-\");\n        Path dest = tempDir.resolve(filename);\n        Files.copy(file.getInputStream(), dest, StandardCopyOption.REPLACE_EXISTING);\n        return ResponseEntity.ok(\"saved to \" + dest);\n    }\n}\n",
+    "tags": ["spring boot", "multipart", "upload", "rest"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-28",
+    "title": "S3アップロード用サービス(インターフェイス/実装分離)",
+    "description": "ストレージへのアップロード処理をインターフェイスで抽象化し、S3実装を切り替えやすくする例です。",
+    "language": "Java",
+    "code": "package com.example.demo.storage;\n\nimport org.springframework.context.annotation.Profile;\nimport org.springframework.stereotype.Service;\nimport org.springframework.web.multipart.MultipartFile;\n\npublic interface StorageService {\n    String upload(String path, MultipartFile file);\n}\n\n@Service\n@Profile(\"local\")\nclass LocalStorageService implements StorageService {\n\n    @Override\n    public String upload(String path, MultipartFile file) {\n        // ローカルファイルシステムに保存する実装\n        return \"local://\" + path;\n    }\n}\n\n@Service\n@Profile(\"prod\")\nclass S3StorageService implements StorageService {\n\n    // 実際はAmazonS3クライアントなどをDI\n\n    @Override\n    public String upload(String path, MultipartFile file) {\n        // s3Client.putObject(...)\n        return \"s3://bucket/\" + path;\n    }\n}\n",
+    "tags": ["spring boot", "s3", "storage", "profile"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-29",
+    "title": "ログインユーザー情報をSecurityContextから取得",
+    "description": "Spring Securityで認証済みユーザーのユーザー名をサービス層で取得する例です。",
+    "language": "Java",
+    "code": "package com.example.demo.security;\n\nimport org.springframework.security.core.Authentication;\nimport org.springframework.security.core.context.SecurityContextHolder;\nimport org.springframework.stereotype.Service;\n\n@Service\npublic class LoginUserService {\n\n    public String getCurrentUsername() {\n        Authentication auth = SecurityContextHolder.getContext().getAuthentication();\n        if (auth == null || !auth.isAuthenticated()) {\n            return null;\n        }\n        return auth.getName();\n    }\n}\n",
+    "tags": ["spring boot", "spring security", "authentication", "service"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-30",
+    "title": "メソッド単位のロール制御(@PreAuthorize)",
+    "description": "管理者ロールのみ実行できるメソッドを@PreAuthorizeで制限する例です。",
+    "language": "Java",
+    "code": "package com.example.demo.authz;\n\nimport org.springframework.security.access.prepost.PreAuthorize;\nimport org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;\nimport org.springframework.stereotype.Service;\n\n@EnableMethodSecurity\nclass MethodSecurityConfig {\n}\n\n@Service\npublic class AdminService {\n\n    @PreAuthorize(\"hasRole('ADMIN')\")\n    public void deleteUser(Long userId) {\n        // 管理者だけが呼べる処理\n    }\n}\n",
+    "tags": ["spring boot", "spring security", "preauthorize", "role"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-31",
+    "title": "JWTトークンを検証するOncePerRequestFilter",
+    "description": "AuthorizationヘッダのBearerトークンを検証してSecurityContextに認証情報を詰める例です。",
+    "language": "Java",
+    "code": "package com.example.demo.jwt;\n\nimport jakarta.servlet.FilterChain;\nimport jakarta.servlet.ServletException;\nimport jakarta.servlet.http.HttpServletRequest;\nimport jakarta.servlet.http.HttpServletResponse;\nimport org.springframework.security.authentication.UsernamePasswordAuthenticationToken;\nimport org.springframework.security.core.context.SecurityContextHolder;\nimport org.springframework.security.web.authentication.WebAuthenticationDetailsSource;\nimport org.springframework.stereotype.Component;\nimport org.springframework.web.filter.OncePerRequestFilter;\n\nimport java.io.IOException;\n\n@Component\npublic class JwtAuthenticationFilter extends OncePerRequestFilter {\n\n    private final JwtTokenService jwtTokenService;\n\n    public JwtAuthenticationFilter(JwtTokenService jwtTokenService) {\n        this.jwtTokenService = jwtTokenService;\n    }\n\n    @Override\n    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)\n            throws ServletException, IOException {\n        String header = request.getHeader(\"Authorization\");\n        if (header != null && header.startsWith(\"Bearer \")) {\n            String token = header.substring(7);\n            JwtUserDetails user = jwtTokenService.parse(token);\n            if (user != null && SecurityContextHolder.getContext().getAuthentication() == null) {\n                UsernamePasswordAuthenticationToken auth =\n                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());\n                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));\n                SecurityContextHolder.getContext().setAuthentication(auth);\n            }\n        }\n        filterChain.doFilter(request, response);\n    }\n}\n\n// JwtTokenService, JwtUserDetails は適宜定義\n",
+    "tags": ["spring boot", "jwt", "spring security", "filter"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-32",
+    "title": "ValidationエラーをREST向けに整形(@RestControllerAdvice)",
+    "description": "Bean Validationのエラーをフィールド単位のエラー配列として返却するパターンです。",
+    "language": "Java",
+    "code": "package com.example.demo.validation;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.MethodArgumentNotValidException;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\nimport java.util.List;\n\n@RestControllerAdvice\npublic class ValidationErrorHandler {\n\n    record FieldErrorDto(String field, String message) {}\n\n    record ValidationErrorResponse(List<FieldErrorDto> errors) {}\n\n    @ExceptionHandler(MethodArgumentNotValidException.class)\n    public ResponseEntity<ValidationErrorResponse> handle(MethodArgumentNotValidException ex) {\n        List<FieldErrorDto> errors = ex.getBindingResult().getFieldErrors().stream()\n                .map(err -> new FieldErrorDto(err.getField(), err.getDefaultMessage()))\n                .toList();\n        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ValidationErrorResponse(errors));\n    }\n}\n",
+    "tags": ["spring boot", "validation", "exception handler", "rest"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-33",
+    "title": "国際化メッセージ(MessageSourceの利用)",
+    "description": "メッセージキーとロケールに応じて多言語メッセージを返却する例です。",
+    "language": "Java",
+    "code": "package com.example.demo.i18n;\n\nimport org.springframework.context.MessageSource;\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.context.support.ReloadableResourceBundleMessageSource;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestHeader;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.util.Locale;\n\n@Configuration\nclass MessageConfig {\n\n    @Bean\n    public MessageSource messageSource() {\n        ReloadableResourceBundleMessageSource ms = new ReloadableResourceBundleMessageSource();\n        ms.setBasename(\"classpath:messages\");\n        ms.setDefaultEncoding(\"UTF-8\");\n        return ms;\n    }\n}\n\n@RestController\n@RequestMapping(\"/api/i18n\")\nclass I18nController {\n\n    private final MessageSource messageSource;\n\n    I18nController(MessageSource messageSource) {\n        this.messageSource = messageSource;\n    }\n\n    @GetMapping(\"/hello\")\n    public String hello(@RequestHeader(name = \"Accept-Language\", required = false) String lang) {\n        Locale locale = (lang == null || lang.isBlank()) ? Locale.getDefault() : Locale.forLanguageTag(lang);\n        return messageSource.getMessage(\"hello.message\", null, locale);\n    }\n}\n\n// messages.properties, messages_ja.properties 等に hello.message を定義\n",
+    "tags": ["spring boot", "i18n", "messagesource", "locale"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-34",
+    "title": "カスタムバリデーションアノテーション",
+    "description": "例として「偶数のみ許可」する@EvenNumberバリデーションを作成するサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.customvalidation;\n\nimport jakarta.validation.Constraint;\nimport jakarta.validation.ConstraintValidator;\nimport jakarta.validation.ConstraintValidatorContext;\nimport jakarta.validation.Payload;\n\nimport java.lang.annotation.Documented;\nimport java.lang.annotation.Retention;\nimport java.lang.annotation.Target;\n\nimport static java.lang.annotation.ElementType.FIELD;\nimport static java.lang.annotation.RetentionPolicy.RUNTIME;\n\n@Target({FIELD})\n@Retention(RUNTIME)\n@Constraint(validatedBy = EvenNumber.EvenValidator.class)\n@Documented\npublic @interface EvenNumber {\n\n    String message() default \"must be even\";\n\n    Class<?>[] groups() default {};\n\n    Class<? extends Payload>[] payload() default {};\n\n    class EvenValidator implements ConstraintValidator<EvenNumber, Integer> {\n        @Override\n        public boolean isValid(Integer value, ConstraintValidatorContext context) {\n            if (value == null) return true;\n            return value % 2 == 0;\n        }\n    }\n}\n\n// 使用例\n// class SampleRequest {\n//     @EvenNumber\n//     private Integer count;\n// }\n",
+    "tags": ["spring boot", "validation", "custom annotation", "jakarta validation"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-35",
+    "title": "Redisキャッシュ(@Cacheable)で一覧取得をキャッシュ",
+    "description": "Redisを利用した@Cacheableの設定と、典型的な一覧キャッシュの例です。",
+    "language": "Java",
+    "code": "package com.example.demo.cache;\n\nimport org.springframework.cache.annotation.Cacheable;\nimport org.springframework.cache.annotation.EnableCaching;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.stereotype.Service;\n\nimport java.util.List;\n\n@Configuration\n@EnableCaching\nclass CacheConfig {\n}\n\n@Service\nclass MasterDataService {\n\n    @Cacheable(\"categories\")\n    public List<String> getCategories() {\n        // 実際にはDBから取得\n        simulateSlow();\n        return List.of(\"A\", \"B\", \"C\");\n    }\n\n    private void simulateSlow() {\n        try {\n            Thread.sleep(1000);\n        } catch (InterruptedException e) {\n            Thread.currentThread().interrupt();\n        }\n    }\n}\n",
+    "tags": ["spring boot", "redis", "cacheable", "enable caching"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-36",
+    "title": "キャッシュ削除(@CacheEvict)で更新時にキャッシュを無効化",
+    "description": "更新系メソッドで@CacheEvictを使い、古いキャッシュを削除するパターンです。",
+    "language": "Java",
+    "code": "package com.example.demo.cache;\n\nimport org.springframework.cache.annotation.CacheEvict;\nimport org.springframework.stereotype.Service;\n\n@Service\npublic class CategoryAdminService {\n\n    private final MasterDataService masterDataService;\n\n    public CategoryAdminService(MasterDataService masterDataService) {\n        this.masterDataService = masterDataService;\n    }\n\n    @CacheEvict(value = \"categories\", allEntries = true)\n    public void addCategory(String category) {\n        // DBにカテゴリを追加する処理\n        // 追加後にcategoriesキャッシュを全削除\n    }\n}\n",
+    "tags": ["spring boot", "cacheevict", "cache", "redis"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-37",
+    "title": "Querydslでタイプセーフに検索する例",
+    "description": "Querydslを用いたシンプルな検索APIのサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.querydsl;\n\nimport com.querydsl.jpa.impl.JPAQueryFactory;\nimport org.springframework.stereotype.Repository;\n\nimport java.util.List;\n\n@Repository\npublic class UserQueryRepository {\n\n    private final JPAQueryFactory queryFactory;\n\n    public UserQueryRepository(JPAQueryFactory queryFactory) {\n        this.queryFactory = queryFactory;\n    }\n\n    public List<User> search(String nameKeyword) {\n        QUser u = QUser.user;\n        return queryFactory.selectFrom(u)\n                .where(u.name.containsIgnoreCase(nameKeyword))\n                .fetch();\n    }\n}\n\n// User, QUser はQuerydslのエンティティ/メタクラス\n",
+    "tags": ["spring boot", "querydsl", "jpa", "search"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-38",
+    "title": "ドメインイベント発行(ApplicationEventPublisher)",
+    "description": "ユーザー登録完了時にドメインイベントを発行して他の処理を疎結合にする例です。",
+    "language": "Java",
+    "code": "package com.example.demo.event;\n\nimport org.springframework.context.ApplicationEventPublisher;\nimport org.springframework.context.event.EventListener;\nimport org.springframework.stereotype.Component;\nimport org.springframework.stereotype.Service;\n\npublic record UserRegisteredEvent(Long userId, String email) {\n}\n\n@Service\nclass UserService {\n\n    private final ApplicationEventPublisher publisher;\n\n    UserService(ApplicationEventPublisher publisher) {\n        this.publisher = publisher;\n    }\n\n    public void register(String email) {\n        // ユーザーを作成しIDを取得\n        Long userId = 1L;\n        publisher.publishEvent(new UserRegisteredEvent(userId, email));\n    }\n}\n\n@Component\nclass UserRegisteredListener {\n\n    @EventListener\n    public void onUserRegistered(UserRegisteredEvent event) {\n        // メール送信や監査ログなど\n        System.out.println(\"user registered: \" + event.userId());\n    }\n}\n",
+    "tags": ["spring boot", "applicationeventpublisher", "eventlistener", "domain event"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-39",
+    "title": "トランザクション完了後に処理する@TransactionalEventListener",
+    "description": "DBコミット完了後にだけ実行したい処理を@TransactionalEventListenerで実装する例です。",
+    "language": "Java",
+    "code": "package com.example.demo.txevent;\n\nimport org.springframework.context.ApplicationEventPublisher;\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.event.TransactionPhase;\nimport org.springframework.transaction.event.TransactionalEventListener;\n\npublic record OrderCreatedEvent(Long orderId) {\n}\n\n@Service\nclass TxOrderService {\n\n    private final ApplicationEventPublisher publisher;\n\n    TxOrderService(ApplicationEventPublisher publisher) {\n        this.publisher = publisher;\n    }\n\n    public void createOrder() {\n        // 注文作成 & 保存\n        Long orderId = 1L;\n        publisher.publishEvent(new OrderCreatedEvent(orderId));\n    }\n}\n\n@Service\nclass OrderEventHandler {\n\n    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)\n    public void handleAfterCommit(OrderCreatedEvent event) {\n        // コミット完了後にだけ行いたい処理（メール送信など）\n        System.out.println(\"order committed: \" + event.orderId());\n    }\n}\n",
+    "tags": ["spring boot", "transactionaleventlistener", "event", "after commit"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-40",
+    "title": "テナントIDを自動付与するベースエンティティ",
+    "description": "マルチテナント構成で、ログインユーザのテナントIDを自動的にエンティティに設定する例です。",
+    "language": "Java",
+    "code": "package com.example.demo.tenant;\n\nimport jakarta.persistence.Column;\nimport jakarta.persistence.EntityListeners;\nimport jakarta.persistence.MappedSuperclass;\nimport org.springframework.data.jpa.domain.support.AuditingEntityListener;\nimport org.springframework.stereotype.Component;\n\nimport jakarta.persistence.PrePersist;\nimport jakarta.persistence.PreUpdate;\n\n@MappedSuperclass\n@EntityListeners({AuditingEntityListener.class, TenantEntityListener.class})\npublic abstract class TenantAwareEntity {\n\n    @Column(name = \"tenant_id\", nullable = false)\n    private String tenantId;\n\n    public String getTenantId() { return tenantId; }\n\n    public void setTenantId(String tenantId) { this.tenantId = tenantId; }\n}\n\n@Component\nclass TenantContext {\n    // 実際はThreadLocalやSecurityContextから取得\n    public String getCurrentTenantId() {\n        return \"tenant-1\";\n    }\n}\n\n@Component\nclass TenantEntityListener {\n\n    private static TenantContext tenantContext;\n\n    public TenantEntityListener(TenantContext tenantContext) {\n        TenantEntityListener.tenantContext = tenantContext;\n    }\n\n    @PrePersist\n    @PreUpdate\n    public void setTenant(Object entity) {\n        if (entity instanceof TenantAwareEntity tenantAware) {\n            if (tenantAware.getTenantId() == null) {\n                tenantAware.setTenantId(tenantContext.getCurrentTenantId());\n            }\n        }\n    }\n}\n",
+    "tags": ["spring boot", "multi-tenant", "jpa", "entity listener"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-41",
+    "title": "カスタムHealthIndicatorでDBとRedisをまとめて監視",
+    "description": "ActuatorのHealthにDBとRedisの状態を追加する実用的な例です。",
+    "language": "Java",
+    "code": "package com.example.demo.health;\n\nimport org.springframework.boot.actuate.health.Health;\nimport org.springframework.boot.actuate.health.HealthIndicator;\nimport org.springframework.stereotype.Component;\n\nimport javax.sql.DataSource;\nimport java.sql.Connection;\nimport java.sql.SQLException;\n\n@Component\npublic class CompositeHealthIndicator implements HealthIndicator {\n\n    private final DataSource dataSource;\n    private final RedisPingClient redisPingClient;\n\n    public CompositeHealthIndicator(DataSource dataSource, RedisPingClient redisPingClient) {\n        this.dataSource = dataSource;\n        this.redisPingClient = redisPingClient;\n    }\n\n    @Override\n    public Health health() {\n        Health.Builder builder = Health.up();\n        // DB\n        try (Connection c = dataSource.getConnection()) {\n            if (!c.isValid(2)) {\n                builder.down().withDetail(\"db\", \"invalid\");\n            } else {\n                builder.withDetail(\"db\", \"ok\");\n            }\n        } catch (SQLException e) {\n            builder.down(e).withDetail(\"db\", \"error\");\n        }\n        // Redis\n        try {\n            boolean ok = redisPingClient.ping();\n            builder.withDetail(\"redis\", ok ? \"ok\" : \"ng\");\n            if (!ok) builder.down();\n        } catch (Exception e) {\n            builder.down(e).withDetail(\"redis\", \"error\");\n        }\n        return builder.build();\n    }\n}\n\n// RedisPingClientは\"PING\"を投げて true/false を返す簡易クライアントとして別途定義\n",
+    "tags": ["spring boot", "actuator", "health", "monitoring"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-42",
+    "title": "Actuator /info にGit情報とビルド情報を載せる",
+    "description": "git.propertiesとbuild-infoをinfoエンドポイントに出す設定例です。",
+    "language": "Java",
+    "code": "package com.example.demo.info;\n\nimport org.springframework.boot.actuate.info.Info;\nimport org.springframework.boot.actuate.info.InfoContributor;\nimport org.springframework.stereotype.Component;\n\nimport java.util.Map;\n\n@Component\npublic class CustomInfoContributor implements InfoContributor {\n\n    @Override\n    public void contribute(Info.Builder builder) {\n        builder.withDetail(\"app\", Map.of(\n                \"owner\", \"dev-team-a\",\n                \"contact\", \"dev@example.com\"\n        ));\n    }\n}\n\n// build.gradle 例\n// springBoot {\n//     buildInfo()\n// }\n// git-commit-id-plugin で git.properties も生成しておくと /actuator/info に自動反映される\n",
+    "tags": ["spring boot", "actuator", "info", "build-info"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-43",
+    "title": "Micrometerでカスタムメトリクス(Counter)を追加",
+    "description": "特定APIの呼び出し回数をメトリクスとして収集するサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.metrics;\n\nimport io.micrometer.core.instrument.Counter;\nimport io.micrometer.core.instrument.MeterRegistry;\nimport org.springframework.stereotype.Service;\n\n@Service\npublic class LoginMetricsService {\n\n    private final Counter loginSuccessCounter;\n\n    public LoginMetricsService(MeterRegistry registry) {\n        this.loginSuccessCounter = Counter\n                .builder(\"app.login.success\")\n                .description(\"count of successful logins\")\n                .register(registry);\n    }\n\n    public void incrementSuccess() {\n        loginSuccessCounter.increment();\n    }\n}\n\n// ログイン成功処理内で loginMetricsService.incrementSuccess() を呼ぶ\n",
+    "tags": ["spring boot", "micrometer", "metrics", "prometheus"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-44",
+    "title": "Tomcatのグレースフルシャットダウン設定",
+    "description": "シャットダウン時に一定時間リクエスト完了を待つための設定例です。",
+    "language": "Java",
+    "code": "package com.example.demo.shutdown;\n\nimport org.apache.catalina.connector.Connector;\nimport org.springframework.boot.web.embedded.tomcat.TomcatConnectorCustomizer;\nimport org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;\nimport org.springframework.boot.web.server.WebServerFactoryCustomizer;\nimport org.springframework.context.ApplicationListener;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.context.event.ContextClosedEvent;\n\nimport java.util.concurrent.Executor;\nimport java.util.concurrent.ThreadPoolExecutor;\n\n@Configuration\npublic class GracefulShutdownConfig implements WebServerFactoryCustomizer<TomcatServletWebServerFactory>, ApplicationListener<ContextClosedEvent> {\n\n    private volatile Connector connector;\n\n    @Override\n    public void customize(TomcatServletWebServerFactory factory) {\n        factory.addConnectorCustomizers((TomcatConnectorCustomizer) connector -> this.connector = connector);\n    }\n\n    @Override\n    public void onApplicationEvent(ContextClosedEvent event) {\n        this.connector.pause();\n        Executor executor = this.connector.getProtocolHandler().getExecutor();\n        if (executor instanceof ThreadPoolExecutor threadPoolExecutor) {\n            threadPoolExecutor.shutdown();\n            // 実際はawaitTerminationで一定時間待つなど\n        }\n    }\n}\n",
+    "tags": ["spring boot", "tomcat", "shutdown", "ops"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-45",
+    "title": "Bucket4jで簡易レートリミットFilter",
+    "description": "IPごとに一定リクエスト数を制限するFilterのサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.ratelimit;\n\nimport com.bucket4j.Bandwidth;\nimport com.bucket4j.Bucket;\nimport com.bucket4j.Bucket4j;\nimport com.bucket4j.Refill;\nimport jakarta.servlet.FilterChain;\nimport jakarta.servlet.ServletException;\nimport jakarta.servlet.http.HttpServletRequest;\nimport jakarta.servlet.http.HttpServletResponse;\nimport org.springframework.stereotype.Component;\nimport org.springframework.web.filter.OncePerRequestFilter;\n\nimport java.io.IOException;\nimport java.time.Duration;\nimport java.util.Map;\nimport java.util.concurrent.ConcurrentHashMap;\n\n@Component\npublic class RateLimitFilter extends OncePerRequestFilter {\n\n    private final Map<String, Bucket> cache = new ConcurrentHashMap<>();\n\n    @Override\n    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)\n            throws ServletException, IOException {\n        String key = request.getRemoteAddr();\n        Bucket bucket = cache.computeIfAbsent(key, this::newBucket);\n        if (bucket.tryConsume(1)) {\n            filterChain.doFilter(request, response);\n        } else {\n            response.setStatus(429);\n            response.getWriter().write(\"Too Many Requests\");\n        }\n    }\n\n    private Bucket newBucket(String key) {\n        Bandwidth limit = Bandwidth.classic(100, Refill.greedy(100, Duration.ofMinutes(1)));\n        return Bucket4j.builder().addLimit(limit).build();\n    }\n}\n",
+    "tags": ["spring boot", "rate limit", "bucket4j", "filter"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-46",
+    "title": "Idempotency-Keyヘッダで二重POST防止",
+    "description": "Idempotency-Keyを使い同じリクエストの多重送信を防ぐFilterの例です。(ストレージは簡略化)",
+    "language": "Java",
+    "code": "package com.example.demo.idempotency;\n\nimport jakarta.servlet.FilterChain;\nimport jakarta.servlet.ServletException;\nimport jakarta.servlet.http.HttpServletRequest;\nimport jakarta.servlet.http.HttpServletResponse;\nimport org.springframework.stereotype.Component;\nimport org.springframework.web.filter.OncePerRequestFilter;\n\nimport java.io.IOException;\nimport java.util.Set;\nimport java.util.concurrent.ConcurrentHashMap;\n\n@Component\npublic class IdempotencyFilter extends OncePerRequestFilter {\n\n    private final Set<String> usedKeys = ConcurrentHashHashMap.newKeySet();\n\n    @Override\n    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)\n            throws ServletException, IOException {\n        if (\"POST\".equalsIgnoreCase(request.getMethod())) {\n            String key = request.getHeader(\"Idempotency-Key\");\n            if (key != null && !key.isBlank()) {\n                if (!usedKeys.add(key)) {\n                    response.setStatus(409);\n                    response.getWriter().write(\"Duplicate request\");\n                    return;\n                }\n            }\n        }\n        filterChain.doFilter(request, response);\n    }\n}\n\n// 実運用ではRedisなどに保存しTTLをつける\n",
+    "tags": ["spring boot", "idempotency", "filter", "rest"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-47",
+    "title": "APIバージョニング(v1/v2)のController分割",
+    "description": "パスでバージョンを切り替える実用的なAPIバージョニングの例です。",
+    "language": "Java",
+    "code": "package com.example.demo.version;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/v1/users\")\nclass UserControllerV1 {\n\n    @GetMapping(\"/me\")\n    public String me() {\n        return \"v1 response\";\n    }\n}\n\n@RestController\n@RequestMapping(\"/api/v2/users\")\nclass UserControllerV2 {\n\n    @GetMapping(\"/me\")\n    public UserMeResponse v2Me() {\n        return new UserMeResponse(\"user-1\", \"Taro\", \"taro@example.com\");\n    }\n\n    record UserMeResponse(String id, String name, String email) {}\n}\n",
+    "tags": ["spring boot", "api version", "rest", "controller"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-48",
+    "title": "ファイルダウンロードAPI(Content-Disposition)",
+    "description": "ファイルを添付ダウンロードさせるシンプルな実装例です。",
+    "language": "Java",
+    "code": "package com.example.demo.download;\n\nimport org.springframework.core.io.ByteArrayResource;\nimport org.springframework.core.io.Resource;\nimport org.springframework.http.HttpHeaders;\nimport org.springframework.http.MediaType;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\npublic class FileDownloadController {\n\n    @GetMapping(\"/api/files/{id}\")\n    public ResponseEntity<Resource> download(@PathVariable Long id) {\n        byte[] data = \"dummy\".getBytes(); // 実際はストレージから取得\n        String filename = \"sample.txt\";\n\n        return ResponseEntity.ok()\n                .contentType(MediaType.APPLICATION_OCTET_STREAM)\n                .header(HttpHeaders.CONTENT_DISPOSITION, \"attachment; filename=\" + filename)\n                .body(new ByteArrayResource(data));\n    }\n}\n",
+    "tags": ["spring boot", "download", "rest", "content-disposition"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-49",
+    "title": "Rangeリクエスト対応の部分ダウンロード",
+    "description": "大きな動画ファイルなどに対するRangeヘッダ対応の例です。(実装簡略化)",
+    "language": "Java",
+    "code": "package com.example.demo.range;\n\nimport org.springframework.core.io.InputStreamResource;\nimport org.springframework.http.*;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestHeader;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.io.ByteArrayInputStream;\n\n@RestController\npublic class RangeDownloadController {\n\n    @GetMapping(\"/api/videos/sample\")\n    public ResponseEntity<InputStreamResource> getVideo(@RequestHeader(value = \"Range\", required = false) String rangeHeader) {\n        byte[] all = new byte[1024 * 1024]; // 実際はファイルから読み込み\n        int from = 0;\n        int to = all.length - 1;\n        if (rangeHeader != null && rangeHeader.startsWith(\"bytes=\")) {\n            String[] parts = rangeHeader.substring(6).split(\"-\");\n            from = Integer.parseInt(parts[0]);\n            if (parts.length > 1 && !parts[1].isBlank()) {\n                to = Integer.parseInt(parts[1]);\n            }\n        }\n        int length = to - from + 1;\n        ByteArrayInputStream input = new ByteArrayInputStream(all, from, length);\n        HttpHeaders headers = new HttpHeaders();\n        headers.add(HttpHeaders.CONTENT_RANGE, \"bytes \" + from + \"-\" + to + \"/\" + all.length);\n        return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)\n                .headers(headers)\n                .contentLength(length)\n                .contentType(MediaType.valueOf(\"video/mp4\"))\n                .body(new InputStreamResource(input));\n    }\n}\n",
+    "tags": ["spring boot", "range", "download", "video"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-50",
+    "title": "StreamingResponseBodyで大容量CSVをストリーミング返却",
+    "description": "メモリにためずにCSVを逐次書き出すREST APIの例です。",
+    "language": "Java",
+    "code": "package com.example.demo.stream;\n\nimport org.springframework.http.HttpHeaders;\nimport org.springframework.http.MediaType;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RestController;\nimport org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;\n\nimport java.nio.charset.StandardCharsets;\n\n@RestController\npublic class CsvExportController {\n\n    @GetMapping(\"/api/export.csv\")\n    public ResponseEntity<StreamingResponseBody> export() {\n        StreamingResponseBody body = output -> {\n            String header = \"id,name\\n\";\n            output.write(header.getBytes(StandardCharsets.UTF_8));\n            for (int i = 1; i <= 100000; i++) {\n                String line = i + \",user-\" + i + \"\\n\";\n                output.write(line.getBytes(StandardCharsets.UTF_8));\n            }\n        };\n        return ResponseEntity.ok()\n                .header(HttpHeaders.CONTENT_DISPOSITION, \"attachment; filename=users.csv\")\n                .contentType(new MediaType(\"text\", \"csv\"))\n                .body(body);\n    }\n}\n",
+    "tags": ["spring boot", "streamingresponsebody", "csv", "export"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-51",
+    "title": "Server-Sent Events(SSE)でリアルタイム通知",
+    "description": "SSEを使ってクライアントにログ風のメッセージをストリーミング送信する例です。",
+    "language": "Java",
+    "code": "package com.example.demo.sse;\n\nimport org.springframework.http.MediaType;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RestController;\nimport org.springframework.web.servlet.mvc.method.annotation.SseEmitter;\n\nimport java.io.IOException;\nimport java.util.concurrent.Executors;\n\n@RestController\npublic class SseController {\n\n    @GetMapping(value = \"/api/stream/logs\", produces = MediaType.TEXT_EVENT_STREAM_VALUE)\n    public SseEmitter logs() {\n        SseEmitter emitter = new SseEmitter(0L);\n        Executors.newSingleThreadExecutor().submit(() -> {\n            try {\n                for (int i = 0; i < 10; i++) {\n                    emitter.send(SseEmitter.event().name(\"log\").data(\"log-\" + i));\n                    Thread.sleep(1000);\n                }\n                emitter.complete();\n            } catch (IOException | InterruptedException e) {\n                emitter.completeWithError(e);\n                Thread.currentThread().interrupt();\n            }\n        });\n        return emitter;\n    }\n}\n",
+    "tags": ["spring boot", "sse", "realtime", "event-stream"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-52",
+    "title": "WebSocket(STOMP)チャットの最小実装",
+    "description": "シンプルなチャット用のWebSocketエンドポイントを定義する例です。",
+    "language": "Java",
+    "code": "package com.example.demo.ws;\n\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.messaging.handler.annotation.MessageMapping;\nimport org.springframework.messaging.handler.annotation.SendTo;\nimport org.springframework.messaging.simp.config.MessageBrokerRegistry;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;\nimport org.springframework.web.socket.config.annotation.StompEndpointRegistry;\nimport org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;\n\n@Configuration\n@EnableWebSocketMessageBroker\nclass WebSocketConfig implements WebSocketMessageBrokerConfigurer {\n\n    @Override\n    public void configureMessageBroker(MessageBrokerRegistry config) {\n        config.enableSimpleBroker(\"/topic\");\n        config.setApplicationDestinationPrefixes(\"/app\");\n    }\n\n    @Override\n    public void registerStompEndpoints(StompEndpointRegistry registry) {\n        registry.addEndpoint(\"/ws\").setAllowedOriginPatterns(\"*\").withSockJS();\n    }\n}\n\n@Controller\nclass ChatController {\n\n    @MessageMapping(\"/chat\")\n    @SendTo(\"/topic/messages\")\n    public ChatMessage send(ChatMessage message) {\n        return message;\n    }\n\n    public record ChatMessage(String from, String text) {}\n}\n",
+    "tags": ["spring boot", "websocket", "stomp", "chat"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-53",
+    "title": "監査ログを非同期に書き込むApplicationEvent",
+    "description": "ビジネス処理と監査ログ記録を疎結合・非同期化するサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.auditlog;\n\nimport org.springframework.context.ApplicationEventPublisher;\nimport org.springframework.context.event.EventListener;\nimport org.springframework.scheduling.annotation.Async;\nimport org.springframework.scheduling.annotation.EnableAsync;\nimport org.springframework.stereotype.Component;\nimport org.springframework.stereotype.Service;\n\npublic record AuditLogEvent(String type, String detail) {}\n\n@EnableAsync\n@Component\nclass AuditLogListener {\n\n    @Async\n    @EventListener\n    public void handle(AuditLogEvent event) {\n        // ファイル・DB等に非同期で書き込み\n        System.out.println(\"audit: \" + event.type() + \" - \" + event.detail());\n    }\n}\n\n@Service\nclass BusinessService {\n\n    private final ApplicationEventPublisher publisher;\n\n    BusinessService(ApplicationEventPublisher publisher) {\n        this.publisher = publisher;\n    }\n\n    public void something(String userId) {\n        // ビジネス処理\n        publisher.publishEvent(new AuditLogEvent(\"USER_ACTION\", \"user=\" + userId));\n    }\n}\n",
+    "tags": ["spring boot", "event", "audit", "async"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-54",
+    "title": "ShedLockで@Scheduledの多重起動防止",
+    "description": "複数インスタンス構成でジョブが重複起動しないようにする設定例です。",
+    "language": "Java",
+    "code": "package com.example.demo.shedlock;\n\nimport net.javacrumbs.shedlock.core.LockProvider;\nimport net.javacrumbs.shedlock.provider.jdbc.JdbcTemplateLockProvider;\nimport net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;\nimport net.javacrumbs.shedlock.spring.annotation.SchedulerLock;\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.jdbc.core.JdbcTemplate;\nimport org.springframework.scheduling.annotation.EnableScheduling;\nimport org.springframework.scheduling.annotation.Scheduled;\nimport org.springframework.stereotype.Component;\n\nimport javax.sql.DataSource;\n\n@Configuration\n@EnableScheduling\n@EnableSchedulerLock(defaultLockAtMostFor = \"PT30M\")\nclass ShedLockConfig {\n\n    @Bean\n    public LockProvider lockProvider(DataSource dataSource) {\n        return new JdbcTemplateLockProvider(JdbcTemplateLockProvider.Configuration.builder()\n                .withJdbcTemplate(new JdbcTemplate(dataSource))\n                .usingDbTime()\n                .build());\n    }\n}\n\n@Component\nclass SampleJob {\n\n    @Scheduled(cron = \"0 */5 * * * *\")\n    @SchedulerLock(name = \"sampleJob\")\n    public void run() {\n        System.out.println(\"job start\");\n    }\n}\n",
+    "tags": ["spring boot", "shedlock", "scheduled", "cluster-safe"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-55",
+    "title": "読み取り・書き込みでDataSourceを分ける設定",
+    "description": "write/readの2つのDataSourceを定義してRepositoryごとに使い分けるサンプルです(簡略版)。",
+    "language": "Java",
+    "code": "package com.example.demo.multids;\n\nimport org.springframework.beans.factory.annotation.Qualifier;\nimport org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;\nimport org.springframework.boot.context.properties.ConfigurationProperties;\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy;\n\nimport javax.sql.DataSource;\n\n@Configuration\npublic class MultiDataSourceConfig {\n\n    @Bean\n    @ConfigurationProperties(\"app.datasource.write\")\n    public DataSourceProperties writeProps() { return new DataSourceProperties(); }\n\n    @Bean\n    public DataSource writeDataSource() { return writeProps().initializeDataSourceBuilder().build(); }\n\n    @Bean\n    @ConfigurationProperties(\"app.datasource.read\")\n    public DataSourceProperties readProps() { return new DataSourceProperties(); }\n\n    @Bean\n    public DataSource readDataSource() { return readProps().initializeDataSourceBuilder().build(); }\n\n    @Bean\n    public DataSource routingDataSource(@Qualifier(\"writeDataSource\") DataSource write,\n                                        @Qualifier(\"readDataSource\") DataSource read) {\n        // 実際はAbstractRoutingDataSourceを継承して振り分け。ここではLazyConnectionDataSourceProxy例だけ提示\n        return new LazyConnectionDataSourceProxy(write); // サンプル簡略化\n    }\n}\n",
+    "tags": ["spring boot", "datasource", "read-write", "config"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-56",
+    "title": "TransactionTemplateで部分的に新しいトランザクションを張る",
+    "description": "一部処理だけ別トランザクションで実行する実用的なパターンです。",
+    "language": "Java",
+    "code": "package com.example.demo.txtemplate;\n\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.PlatformTransactionManager;\nimport org.springframework.transaction.TransactionDefinition;\nimport org.springframework.transaction.support.DefaultTransactionDefinition;\nimport org.springframework.transaction.support.TransactionTemplate;\n\n@Service\npublic class TxTemplateService {\n\n    private final TransactionTemplate requiresNewTemplate;\n\n    public TxTemplateService(PlatformTransactionManager txManager) {\n        DefaultTransactionDefinition def = new DefaultTransactionDefinition();\n        def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);\n        this.requiresNewTemplate = new TransactionTemplate(txManager, def);\n    }\n\n    public void outer() {\n        // ここは@Transctionalで呼ばれる想定\n        // ... メイン処理\n        requiresNewTemplate.execute(status -> {\n            // 別トランザクションでログだけ残す等\n            saveAuditLog();\n            return null;\n        });\n    }\n\n    private void saveAuditLog() {\n        // ログ保存処理\n    }\n}\n",
+    "tags": ["spring boot", "transaction", "transactiontemplate", "requires-new"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-57",
+    "title": "AbstractRoutingDataSourceで読み書き分離",
+    "description": "ThreadLocalに保持したフラグに応じて接続先を切り替える例です。",
+    "language": "Java",
+    "code": "package com.example.demo.routing;\n\nimport org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;\n\npublic class ReadWriteRoutingDataSource extends AbstractRoutingDataSource {\n\n    private static final ThreadLocal<Boolean> readOnly = ThreadLocal.withInitial(() -> false);\n\n    public static void markReadOnly() { readOnly.set(true); }\n    public static void clear() { readOnly.remove(); }\n\n    @Override\n    protected Object determineCurrentLookupKey() {\n        return readOnly.get() ? \"READ\" : \"WRITE\";\n    }\n}\n\n// 設定で targetDataSources に READ/WRITE を割り当て、AOPでreadOnlyメソッド時にmarkReadOnly/clearを呼ぶ\n",
+    "tags": ["spring boot", "datasource", "routing", "read-write"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-58",
+    "title": "Flyway Callbackでマイグレーション後に初期データ投入",
+    "description": "特定マイグレーション後にのみ実行されるJavaベースのCallback例です。",
+    "language": "Java",
+    "code": "package com.example.demo.flyway;\n\nimport org.flywaydb.core.api.callback.Callback;\nimport org.flywaydb.core.api.callback.Context;\nimport org.flywaydb.core.api.callback.Event;\nimport org.springframework.stereotype.Component;\n\nimport java.sql.Connection;\nimport java.sql.PreparedStatement;\n\n@Component\npublic class SeedDataCallback implements Callback {\n\n    @Override\n    public boolean supports(Event event, Context context) {\n        return event == Event.AFTER_MIGRATE;\n    }\n\n    @Override\n    public void handle(Event event, Context context) throws Exception {\n        try (Connection conn = context.getConnection();\n             PreparedStatement ps = conn.prepareStatement(\"insert into roles(name) values ('ADMIN') on conflict do nothing\")) {\n            ps.executeUpdate();\n        }\n    }\n\n    @Override\n    public boolean canHandleInTransaction(Event event, Context context) {\n        return true;\n    }\n}\n",
+    "tags": ["spring boot", "flyway", "migration", "seed data"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-59",
+    "title": "TestcontainersでPostgreSQLを使った統合テスト",
+    "description": "実DBに近い環境でRepositoryのテストを行うサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.testcontainers;\n\nimport org.junit.jupiter.api.Test;\nimport org.springframework.boot.test.context.SpringBootTest;\nimport org.springframework.test.context.DynamicPropertyRegistry;\nimport org.springframework.test.context.DynamicPropertySource;\nimport org.testcontainers.containers.PostgreSQLContainer;\n\nimport javax.annotation.Resource;\n\n@SpringBootTest\npublic class UserRepositoryIT {\n\n    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(\"postgres:15\");\n\n    static {\n        postgres.start();\n    }\n\n    @DynamicPropertySource\n    static void props(DynamicPropertyRegistry registry) {\n        registry.add(\"spring.datasource.url\", postgres::getJdbcUrl);\n        registry.add(\"spring.datasource.username\", postgres::getUsername);\n        registry.add(\"spring.datasource.password\", postgres::getPassword);\n    }\n\n    @Resource\n    UserRepository userRepository;\n\n    @Test\n    void saveAndFind() {\n        User u = new User();\n        u.setName(\"test\");\n        userRepository.save(u);\n    }\n}\n",
+    "tags": ["spring boot", "testcontainers", "postgres", "integration-test"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-60",
+    "title": "@DataJpaTestでRepositoryをスライステスト",
+    "description": "Repositoryだけを絞り込んだ軽量テストの例です。",
+    "language": "Java",
+    "code": "package com.example.demo.jpadata;\n\nimport org.junit.jupiter.api.Test;\nimport org.springframework.beans.factory.annotation.Autowired;\nimport org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;\n\nimport static org.assertj.core.api.Assertions.assertThat;\n\n@DataJpaTest\nclass BookRepositoryTest {\n\n    @Autowired\n    BookRepository bookRepository;\n\n    @Test\n    void findByTitle() {\n        Book book = new Book();\n        book.setTitle(\"spring\");\n        bookRepository.save(book);\n\n        assertThat(bookRepository.findByTitle(\"spring\")).isPresent();\n    }\n}\n",
+    "tags": ["spring boot", "test", "datajpatest", "repository"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-61",
+    "title": "@WebMvcTest + MockMvcでControllerのAPIテスト",
+    "description": "MockMvcを使ってJSONレスポンスを検証するサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.webmvctest;\n\nimport org.junit.jupiter.api.Test;\nimport org.springframework.beans.factory.annotation.Autowired;\nimport org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;\nimport org.springframework.test.web.servlet.MockMvc;\n\nimport static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;\nimport static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;\nimport static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;\n\n@WebMvcTest(UserApi.class)\nclass UserApiTest {\n\n    @Autowired\n    MockMvc mockMvc;\n\n    @Test\n    void getUser() throws Exception {\n        mockMvc.perform(get(\"/api/users/1\"))\n                .andExpect(status().isOk())\n                .andExpect(jsonPath(\"$.id\").value(1));\n    }\n}\n\n// UserApi は /api/users/{id} を返すコントローラ\n",
+    "tags": ["spring boot", "test", "webmvctest", "mockmvc"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-62",
+    "title": "@SpringBootTest(webEnvironment=RANDOM_PORT)でE2Eに近いAPIテスト",
+    "description": "実際にHTTPで起動したサーバーに対してTestRestTemplateで叩く例です。",
+    "language": "Java",
+    "code": "package com.example.demo.e2e;\n\nimport org.junit.jupiter.api.Test;\nimport org.springframework.beans.factory.annotation.Autowired;\nimport org.springframework.boot.test.context.SpringBootTest;\nimport org.springframework.boot.test.web.client.TestRestTemplate;\nimport org.springframework.http.ResponseEntity;\n\nimport static org.assertj.core.api.Assertions.assertThat;\n\n@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)\nclass UserE2ETest {\n\n    @Autowired\n    TestRestTemplate restTemplate;\n\n    @Test\n    void getMe() {\n        ResponseEntity<String> res = restTemplate.getForEntity(\"/api/me\", String.class);\n        assertThat(res.getStatusCode().is2xxSuccessful()).isTrue();\n    }\n}\n",
+    "tags": ["spring boot", "springboottest", "e2e", "testresttemplate"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-63",
+    "title": "WireMockで外部APIをモックしてテスト",
+    "description": "RestTemplate/WebClientが呼ぶ外部APIをWireMockでスタブする例です。",
+    "language": "Java",
+    "code": "package com.example.demo.wiremock;\n\nimport com.github.tomakehurst.wiremock.client.WireMock;\nimport com.github.tomakehurst.wiremock.junit5.WireMockExtension;\nimport org.junit.jupiter.api.Test;\nimport org.junit.jupiter.api.extension.RegisterExtension;\nimport org.springframework.web.client.RestTemplate;\n\nimport static com.github.tomakehurst.wiremock.client.WireMock.aResponse;\nimport static com.github.tomakehurst.wiremock.client.WireMock.get;\nimport static org.assertj.core.api.Assertions.assertThat;\n\nclass ExternalApiClientTest {\n\n    @RegisterExtension\n    static WireMockExtension server = WireMockExtension.newInstance().options(WireMock.wireMockConfig().dynamicPort()).build();\n\n    @Test\n    void callExternal() {\n        server.stubFor(get(\"/data\").willReturn(aResponse().withStatus(200).withBody(\"ok\")));\n        RestTemplate restTemplate = new RestTemplate();\n        String body = restTemplate.getForObject(server.baseUrl() + \"/data\", String.class);\n        assertThat(body).isEqualTo(\"ok\");\n    }\n}\n",
+    "tags": ["spring boot", "wiremock", "test", "external api"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-64",
+    "title": "Bean Validationグループで登録/更新の制約を出し分け",
+    "description": "createとupdateで必須項目を変えたいときの典型パターンです。",
+    "language": "Java",
+    "code": "package com.example.demo.vgroups;\n\nimport jakarta.validation.GroupSequence;\nimport jakarta.validation.constraints.NotBlank;\nimport jakarta.validation.constraints.NotNull;\n\npublic class UserRequest {\n\n    public interface Create {}\n    public interface Update {}\n\n    @NotNull(groups = Update.class)\n    private Long id;\n\n    @NotBlank(groups = {Create.class, Update.class})\n    private String name;\n\n    // getter/setter 省略\n}\n\n@GroupSequence({UserRequest.Create.class, UserRequest.Update.class})\ninterface ValidationOrder {}\n\n// コントローラ側: @Validated(UserRequest.Create.class) などを付ける\n",
+    "tags": ["spring boot", "validation", "groups", "dto"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-65",
+    "title": "JsonViewで一覧と詳細で返却項目を切り替え",
+    "description": "同じエンティティを用途によって別のビューでシリアライズする例です。",
+    "language": "Java",
+    "code": "package com.example.demo.jsonview;\n\nimport com.fasterxml.jackson.annotation.JsonView;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\npublic class ArticleApi {\n\n    static class Views {\n        interface Summary {}\n        interface Detail extends Summary {}\n    }\n\n    static class ArticleDto {\n        @JsonView(Views.Summary.class)\n        public Long id;\n        @JsonView(Views.Summary.class)\n        public String title;\n        @JsonView(Views.Detail.class)\n        public String body;\n    }\n\n    @GetMapping(\"/api/articles\")\n    @JsonView(Views.Summary.class)\n    public ArticleDto list() {\n        ArticleDto dto = new ArticleDto();\n        dto.id = 1L; dto.title = \"t\"; dto.body = \"body\";\n        return dto;\n    }\n\n    @GetMapping(\"/api/articles/{id}\")\n    @JsonView(Views.Detail.class)\n    public ArticleDto detail(@PathVariable Long id) {\n        ArticleDto dto = new ArticleDto();\n        dto.id = id; dto.title = \"t\"; dto.body = \"body\";\n        return dto;\n    }\n}\n",
+    "tags": ["spring boot", "jackson", "jsonview", "dto"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-66",
+    "title": "Jacksonカスタムシリアライザでマスク処理",
+    "description": "電話番号などをログ/APIレスポンスでマスクするためのシリアライザ例です。",
+    "language": "Java",
+    "code": "package com.example.demo.mask;\n\nimport com.fasterxml.jackson.core.JsonGenerator;\nimport com.fasterxml.jackson.databind.JsonSerializer;\nimport com.fasterxml.jackson.databind.SerializerProvider;\nimport com.fasterxml.jackson.databind.annotation.JsonSerialize;\n\nimport java.io.IOException;\n\npublic class UserMaskDto {\n\n    private String name;\n\n    @JsonSerialize(using = PhoneMaskSerializer.class)\n    private String phone;\n\n    // getter/setter 省略\n}\n\nclass PhoneMaskSerializer extends JsonSerializer<String> {\n    @Override\n    public void serialize(String value, JsonGenerator gen, SerializerProvider serializers) throws IOException {\n        if (value == null || value.length() < 4) {\n            gen.writeString(\"****\");\n            return;\n        }\n        String masked = \"****\" + value.substring(value.length() - 4);\n        gen.writeString(masked);\n    }\n}\n",
+    "tags": ["spring boot", "jackson", "serializer", "masking"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-67",
+    "title": "RFC7807 Problem+JSON形式のエラーレスポンス",
+    "description": "Problem Details形式でエラーを返すための簡易実装です。",
+    "language": "Java",
+    "code": "package com.example.demo.problem;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\nimport java.net.URI;\n\n@RestControllerAdvice\npublic class ProblemHandler {\n\n    record Problem(String type, String title, int status, String detail) {}\n\n    @ExceptionHandler(IllegalArgumentException.class)\n    public ResponseEntity<Problem> handleIllegal(IllegalArgumentException ex) {\n        Problem p = new Problem(URI.create(\"https://example.com/problem/bad-request\").toString(),\n                \"Bad Request\", HttpStatus.BAD_REQUEST.value(), ex.getMessage());\n        return ResponseEntity.badRequest().body(p);\n    }\n}\n",
+    "tags": ["spring boot", "error", "problem-json", "rfc7807"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-68",
+    "title": "springdoc-openapiでOpenAPI定義を自動生成",
+    "description": "ControllerにOpenAPIアノテーションを付けてSwagger UIを出す例です。",
+    "language": "Java",
+    "code": "package com.example.demo.openapi;\n\nimport io.swagger.v3.oas.annotations.Operation;\nimport io.swagger.v3.oas.annotations.media.Content;\nimport io.swagger.v3.oas.annotations.media.Schema;\nimport io.swagger.v3.oas.annotations.responses.ApiResponse;\nimport io.swagger.v3.oas.annotations.tags.Tag;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@Tag(name = \"Health\")\npublic class HealthApi {\n\n    record HealthResponse(String status) {}\n\n    @GetMapping(\"/api/health\")\n    @Operation(summary = \"疎通確認\", description = \"アプリケーションの簡易ヘルスチェック\")\n    @ApiResponse(responseCode = \"200\", description = \"OK\",\n            content = @Content(schema = @Schema(implementation = HealthResponse.class)))\n    public HealthResponse health() {\n        return new HealthResponse(\"ok\");\n    }\n}\n",
+    "tags": ["spring boot", "openapi", "springdoc", "swagger-ui"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-69",
+    "title": "Spring HATEOASでリンク付きレスポンス",
+    "description": "リソースに自己リンクや遷移先リンクを付与するサンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.hateoas;\n\nimport org.springframework.hateoas.EntityModel;\nimport org.springframework.hateoas.Link;\nimport org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\npublic class OrderApi {\n\n    record OrderDto(Long id, String status) {}\n\n    @GetMapping(\"/api/orders/{id}\")\n    public EntityModel<OrderDto> get(@PathVariable Long id) {\n        OrderDto dto = new OrderDto(id, \"NEW\");\n        Link self = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(OrderApi.class).get(id)).withSelfRel();\n        Link cancel = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(OrderApi.class).cancel(id)).withRel(\"cancel\");\n        return EntityModel.of(dto, self, cancel);\n    }\n\n    @GetMapping(\"/api/orders/{id}/cancel\")\n    public void cancel(@PathVariable Long id) {\n        // cancel\n    }\n}\n",
+    "tags": ["spring boot", "hateoas", "rest", "links"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-70",
+    "title": "ページング条件を独自DTOで受けてRepositoryに渡す",
+    "description": "Pageableをそのまま外部に出したくない場合のパターンです。",
+    "language": "Java",
+    "code": "package com.example.demo.page;\n\nimport org.springframework.data.domain.PageRequest;\nimport org.springframework.data.domain.Pageable;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\npublic class CustomPagingApi {\n\n    @GetMapping(\"/api/items\")\n    public void list(@RequestParam(defaultValue = \"1\") int page,\n                     @RequestParam(defaultValue = \"20\") int size) {\n        Pageable pageable = PageRequest.of(page - 1, Math.min(size, 100));\n        // pageableをRepositoryに渡す\n    }\n}\n",
+    "tags": ["spring boot", "paging", "pageable", "dto"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-71",
+    "title": "DDD風の集約ルート + ドメインサービス",
+    "description": "ドメインモデル内で不変条件を守るパターンの簡易例です。",
+    "language": "Java",
+    "code": "package com.example.demo.ddd;\n\nimport java.util.List;\n\npublic class Cart {\n\n    private Long id;\n    private Long userId;\n    private List<CartItem> items;\n\n    public void addItem(CartItem item) {\n        if (items.size() >= 100) throw new IllegalStateException(\"too many items\");\n        items.add(item);\n    }\n\n    public int totalAmount() {\n        return items.stream().mapToInt(CartItem::getAmount).sum();\n    }\n}\n\nclass CartItem {\n    private String sku;\n    private int price;\n    private int quantity;\n    public int getAmount() { return price * quantity; }\n}\n\nclass CartDomainService {\n    public void checkout(Cart cart) {\n        if (cart.totalAmount() <= 0) throw new IllegalStateException(\"empty\");\n        // 決済等\n    }\n}\n",
+    "tags": ["spring boot", "ddd", "domain", "aggregate"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-72",
+    "title": "Transactional Outboxパターンの簡易実装",
+    "description": "同一トランザクションでOutboxテーブルにメッセージを書き、別バッチでKafka等へ送る前段階の例です。",
+    "language": "Java",
+    "code": "package com.example.demo.outbox;\n\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.GeneratedValue;\nimport jakarta.persistence.Id;\nimport org.springframework.data.jpa.repository.JpaRepository;\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Entity\nclass OutboxMessage {\n    @Id @GeneratedValue\n    Long id;\n    String aggregateType;\n    String payload;\n    String status; // NEW,SENT\n}\n\ninterface OutboxRepository extends JpaRepository<OutboxMessage, Long> {}\n\n@Service\nclass OrderWithOutboxService {\n\n    private final OutboxRepository outboxRepository;\n\n    OrderWithOutboxService(OutboxRepository outboxRepository) {\n        this.outboxRepository = outboxRepository;\n    }\n\n    @Transactional\n    public void createOrder() {\n        // Order保存...\n        OutboxMessage msg = new OutboxMessage();\n        msg.aggregateType = \"ORDER\";\n        msg.payload = \"{...}\";\n        msg.status = \"NEW\";\n        outboxRepository.save(msg);\n    }\n}\n",
+    "tags": ["spring boot", "outbox", "transaction", "eventual-consistency"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-73",
+    "title": "KafkaTemplateでメッセージ送信",
+    "description": "Spring for Apache Kafkaを使ったシンプルなメッセージ送信サンプルです。",
+    "language": "Java",
+    "code": "package com.example.demo.kafka;\n\nimport org.springframework.kafka.core.KafkaTemplate;\nimport org.springframework.stereotype.Service;\n\n@Service\npublic class KafkaProducerService {\n\n    private final KafkaTemplate<String, String> kafkaTemplate;\n\n    public KafkaProducerService(KafkaTemplate<String, String> kafkaTemplate) {\n        this.kafkaTemplate = kafkaTemplate;\n    }\n\n    public void sendUserCreated(String userId) {\n        kafkaTemplate.send(\"user.created\", userId, \"created:\" + userId);\n    }\n}\n",
+    "tags": ["spring boot", "kafka", "producer", "messaging"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-74",
+    "title": "KafkaListenerでリトライ + DLT送り",
+    "description": "リスナーでエラー時に再試行し、それでもダメならDLTに送る例(概念レベル)です。",
+    "language": "Java",
+    "code": "package com.example.demo.kafkalistener;\n\nimport org.apache.kafka.clients.consumer.ConsumerRecord;\nimport org.springframework.kafka.annotation.KafkaListener;\nimport org.springframework.kafka.core.KafkaTemplate;\nimport org.springframework.stereotype.Service;\n\n@Service\npublic class UserEventListener {\n\n    private final KafkaTemplate<String, String> kafkaTemplate;\n\n    public UserEventListener(KafkaTemplate<String, String> kafkaTemplate) {\n        this.kafkaTemplate = kafkaTemplate;\n    }\n\n    @KafkaListener(topics = \"user.created\", groupId = \"user-service\")\n    public void listen(ConsumerRecord<String, String> record) {\n        try {\n            handle(record.value());\n        } catch (Exception e) {\n            kafkaTemplate.send(\"user.created.dlt\", record.key(), record.value());\n        }\n    }\n\n    private void handle(String value) {\n        // 処理\n    }\n}\n",
+    "tags": ["spring boot", "kafka", "listener", "dlt"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-75",
+    "title": "RabbitMQでシンプルなメッセージ送受信",
+    "description": "Spring AMQPを使ったキューへの送信と受信の最小構成です。",
+    "language": "Java",
+    "code": "package com.example.demo.rabbit;\n\nimport org.springframework.amqp.core.Queue;\nimport org.springframework.amqp.rabbit.annotation.RabbitListener;\nimport org.springframework.amqp.rabbit.core.RabbitTemplate;\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.stereotype.Service;\n\n@Configuration\nclass RabbitConfig {\n    @Bean\n    Queue queue() { return new Queue(\"sample.queue\", true); }\n}\n\n@Service\nclass RabbitSender {\n\n    private final RabbitTemplate rabbitTemplate;\n\n    RabbitSender(RabbitTemplate rabbitTemplate) {\n        this.rabbitTemplate = rabbitTemplate;\n    }\n\n    public void send(String msg) {\n        rabbitTemplate.convertAndSend(\"sample.queue\", msg);\n    }\n}\n\n@Service\nclass RabbitReceiver {\n\n    @RabbitListener(queues = \"sample.queue\")\n    public void receive(String msg) {\n        System.out.println(\"received: \" + msg);\n    }\n}\n",
+    "tags": ["spring boot", "rabbitmq", "amqp", "messaging"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-76",
+    "title": "Resilience4j CircuitBreakerで外部APIの遮断",
+    "description": "一定回数失敗したら一時的に呼び出しを遮断するパターンです。",
+    "language": "Java",
+    "code": "package com.example.demo.cb;\n\nimport io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;\nimport org.springframework.stereotype.Service;\n\n@Service\npublic class CircuitExternalService {\n\n    @CircuitBreaker(name = \"externalService\", fallbackMethod = \"fallback\")\n    public String call() {\n        // 実際の外部呼び出し\n        throw new RuntimeException(\"failure\");\n    }\n\n    public String fallback(Throwable t) {\n        return \"fallback\";\n    }\n}\n",
+    "tags": ["spring boot", "resilience4j", "circuitbreaker", "fallback"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-77",
+    "title": "Resilience4j Retryで外部APIを再試行",
+    "description": "一時エラー時に数回リトライする簡易設定例です。",
+    "language": "Java",
+    "code": "package com.example.demo.retry2;\n\nimport io.github.resilience4j.retry.annotation.Retry;\nimport org.springframework.stereotype.Service;\n\n@Service\npublic class RetryExternalService {\n\n    @Retry(name = \"externalRetry\")\n    public String call() {\n        // エラーが起きたら自動で再試行\n        throw new RuntimeException(\"temporary error\");\n    }\n}\n",
+    "tags": ["spring boot", "resilience4j", "retry", "external api"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-78",
+    "title": "カスタムExecutorで@Asyncスレッドプールをチューニング",
+    "description": "非同期処理用のスレッドプールサイズなどを調整する設定です。",
+    "language": "Java",
+    "code": "package com.example.demo.asyncconfig;\n\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.scheduling.annotation.AsyncConfigurer;\nimport org.springframework.scheduling.annotation.EnableAsync;\nimport org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;\n\nimport java.util.concurrent.Executor;\n\n@Configuration\n@EnableAsync\npublic class AsyncExecutorConfig implements AsyncConfigurer {\n\n    @Override\n    @Bean(name = \"appTaskExecutor\")\n    public Executor getAsyncExecutor() {\n        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();\n        executor.setCorePoolSize(5);\n        executor.setMaxPoolSize(20);\n        executor.setQueueCapacity(100);\n        executor.setThreadNamePrefix(\"async-\");\n        executor.initialize();\n        return executor;\n    }\n}\n",
+    "tags": ["spring boot", "async", "executor", "threadpool"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-79",
+    "title": "TaskDecoratorでThreadLocalコンテキストを@Asyncに引き継ぐ",
+    "description": "ログ用相関IDなどを非同期スレッドにも渡す実用的な例です。",
+    "language": "Java",
+    "code": "package com.example.demo.taskdecorator;\n\nimport org.slf4j.MDC;\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.core.task.TaskDecorator;\nimport org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;\n\n@Configuration\npublic class MdcTaskDecoratorConfig {\n\n    @Bean\n    public ThreadPoolTaskExecutor mdcExecutor() {\n        ThreadPoolTaskExecutor ex = new ThreadPoolTaskExecutor();\n        ex.setTaskDecorator(mdcTaskDecorator());\n        ex.initialize();\n        return ex;\n    }\n\n    @Bean\n    public TaskDecorator mdcTaskDecorator() {\n        return runnable -> {\n            var contextMap = MDC.getCopyOfContextMap();\n            return () -> {\n                if (contextMap != null) MDC.setContextMap(contextMap);\n                try { runnable.run(); } finally { MDC.clear(); }\n            };\n        };\n    }\n}\n",
+    "tags": ["spring boot", "async", "mdc", "taskdecorator"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-80",
+    "title": "DBを参照するユニークチェック用カスタムバリデータ",
+    "description": "メールアドレスの重複をBean Validationでチェックする例です。",
+    "language": "Java",
+    "code": "package com.example.demo.unique;\n\nimport jakarta.validation.Constraint;\nimport jakarta.validation.ConstraintValidator;\nimport jakarta.validation.ConstraintValidatorContext;\nimport jakarta.validation.Payload;\nimport org.springframework.stereotype.Component;\n\nimport java.lang.annotation.Retention;\nimport java.lang.annotation.Target;\n\nimport static java.lang.annotation.ElementType.FIELD;\nimport static java.lang.annotation.RetentionPolicy.RUNTIME;\n\n@Target(FIELD)\n@Retention(RUNTIME)\n@Constraint(validatedBy = UniqueEmailValidator.class)\npublic @interface UniqueEmail {\n    String message() default \"already used\";\n    Class<?>[] groups() default {};\n    Class<? extends Payload>[] payload() default {};\n}\n\n@Component\nclass UniqueEmailValidator implements ConstraintValidator<UniqueEmail, String> {\n\n    private final UserRepository userRepository;\n\n    UniqueEmailValidator(UserRepository userRepository) {\n        this.userRepository = userRepository;\n    }\n\n    @Override\n    public boolean isValid(String value, ConstraintValidatorContext context) {\n        if (value == null) return true;\n        return !userRepository.existsByEmail(value);\n    }\n}\n",
+    "tags": ["spring boot", "validation", "unique", "database"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-81",
+    "title": "Hibernate Filterでマルチテナントフィルタリング",
+    "description": "tenant_idカラムをHibernateの@Filterで自動付与/絞り込みする例です。",
+    "language": "Java",
+    "code": "package com.example.demo.hibernatefilter;\n\nimport org.hibernate.annotations.Filter;\nimport org.hibernate.annotations.FilterDef;\nimport org.hibernate.annotations.ParamDef;\n\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.GeneratedValue;\nimport jakarta.persistence.Id;\n\n@FilterDef(name = \"tenantFilter\", parameters = @ParamDef(name = \"tenantId\", type = String.class))\n@Filter(name = \"tenantFilter\", condition = \"tenant_id = :tenantId\")\n@Entity\npublic class TenantEntity {\n    @Id @GeneratedValue\n    Long id;\n    String tenantId;\n}\n\n// Session開く際に enableFilter(\"tenantFilter\").setParameter(\"tenantId\", currentTenant) する\n",
+    "tags": ["spring boot", "hibernate", "filter", "multitenant"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-82",
+    "title": "ファイルアップロードサイズ超過エラーのハンドリング",
+    "description": "MaxUploadSizeExceededExceptionを捕まえて専用エラー返却する例です。",
+    "language": "Java",
+    "code": "package com.example.demo.uploaderror;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\nimport org.springframework.web.multipart.MaxUploadSizeExceededException;\n\n@RestControllerAdvice\npublic class UploadExceptionHandler {\n\n    @ExceptionHandler(MaxUploadSizeExceededException.class)\n    public ResponseEntity<String> handle(MaxUploadSizeExceededException ex) {\n        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)\n                .body(\"file too large\");\n    }\n}\n",
+    "tags": ["spring boot", "upload", "exception", "max-size"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-83",
+    "title": "MapStructによるエンティティ→DTOマッピング",
+    "description": "手書きマッパーをやめてMapStructで自動生成する基本例です。",
+    "language": "Java",
+    "code": "package com.example.demo.mapstruct;\n\nimport org.mapstruct.Mapper;\nimport org.mapstruct.Mapping;\n\n@Mapper(componentModel = \"spring\")\npublic interface UserMapper {\n\n    @Mapping(source = \"id\", target = \"id\")\n    @Mapping(source = \"name\", target = \"name\")\n    UserDto toDto(UserEntity entity);\n}\n\nclass UserDto {\n    public Long id; public String name;\n}\n\nclass UserEntity {\n    Long id; String name;\n}\n",
+    "tags": ["spring boot", "mapstruct", "dto", "mapper"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-84",
+    "title": "NativeQueryでDTOプロジェクション",
+    "description": "ネイティブSQL結果をインターフェイスプロジェクションとして受け取る例です。",
+    "language": "Java",
+    "code": "package com.example.demo.nativeproj;\n\nimport org.springframework.data.jpa.repository.JpaRepository;\nimport org.springframework.data.jpa.repository.Query;\n\nimport java.util.List;\n\ninterface UserNameOnly {\n    String getName();\n}\n\ninterface NativeUserRepository extends JpaRepository<User, Long> {\n\n    @Query(value = \"select name from users where active = true\", nativeQuery = true)\n    List<UserNameOnly> findActiveNames();\n}\n\nclass User { /* entity省略 */ }\n",
+    "tags": ["spring boot", "jpa", "native query", "projection"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-85",
+    "title": "JPA @EntityGraphでN+1問題を回避",
+    "description": "関連エンティティをフェッチジョインする代わりに@EntityGraphを利用する例です。",
+    "language": "Java",
+    "code": "package com.example.demo.entitygraph;\n\nimport jakarta.persistence.*;\nimport org.springframework.data.jpa.repository.EntityGraph;\nimport org.springframework.data.jpa.repository.JpaRepository;\n\nimport java.util.List;\n\n@Entity\nclass Post {\n    @Id @GeneratedValue\n    Long id;\n    String title;\n    @OneToMany(mappedBy = \"post\", fetch = FetchType.LAZY)\n    List<Comment> comments;\n}\n\n@Entity\nclass Comment {\n    @Id @GeneratedValue\n    Long id;\n    String body;\n    @ManyToOne\n    Post post;\n}\n\ninterface PostRepository extends JpaRepository<Post, Long> {\n\n    @EntityGraph(attributePaths = \"comments\")\n    List<Post> findAll();\n}\n",
+    "tags": ["spring boot", "jpa", "entitygraph", "n+1"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-86",
+    "title": "BCryptPasswordEncoderでパスワードハッシュ化",
+    "description": "登録時にパスワードをハッシュ化して保存する基本パターンです。",
+    "language": "Java",
+    "code": "package com.example.demo.password;\n\nimport org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;\nimport org.springframework.security.crypto.password.PasswordEncoder;\nimport org.springframework.stereotype.Service;\n\n@Service\npublic class PasswordService {\n\n    private final PasswordEncoder encoder = new BCryptPasswordEncoder();\n\n    public String encode(String raw) {\n        return encoder.encode(raw);\n    }\n\n    public boolean matches(String raw, String encoded) {\n        return encoder.matches(raw, encoded);\n    }\n}\n",
+    "tags": ["spring boot", "security", "bcrypt", "password"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-87",
+    "title": "AuthenticationManagerを使った手動ログイン処理",
+    "description": "フォームログインではなくAPIでログイン→JWT発行する前段階の例です。",
+    "language": "Java",
+    "code": "package com.example.demo.login;\n\nimport org.springframework.security.authentication.AuthenticationManager;\nimport org.springframework.security.authentication.UsernamePasswordAuthenticationToken;\nimport org.springframework.security.core.Authentication;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\npublic class LoginApi {\n\n    private final AuthenticationManager authenticationManager;\n\n    public LoginApi(AuthenticationManager authenticationManager) {\n        this.authenticationManager = authenticationManager;\n    }\n\n    record LoginRequest(String username, String password) {}\n\n    @PostMapping(\"/api/login\")\n    public String login(@RequestBody LoginRequest req) {\n        Authentication auth = authenticationManager.authenticate(\n                new UsernamePasswordAuthenticationToken(req.username(), req.password()));\n        // 認証成功したらJWT発行など\n        return \"token-xxx\";\n    }\n}\n",
+    "tags": ["spring boot", "spring security", "authenticationmanager", "login"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-88",
+    "title": "AccessDeniedHandler/AuthenticationEntryPointでJSONエラーを返却",
+    "description": "403/401をHTMLではなくJSONとして返却する設定例です。",
+    "language": "Java",
+    "code": "package com.example.demo.secjson;\n\nimport jakarta.servlet.http.HttpServletRequest;\nimport jakarta.servlet.http.HttpServletResponse;\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.security.config.annotation.web.builders.HttpSecurity;\nimport org.springframework.security.web.AuthenticationEntryPoint;\nimport org.springframework.security.web.SecurityFilterChain;\nimport org.springframework.security.web.access.AccessDeniedHandler;\n\nimport java.io.IOException;\n\n@Configuration\npublic class SecurityJsonConfig {\n\n    @Bean\n    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {\n        http\n            .csrf().disable()\n            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())\n            .exceptionHandling(e -> e\n                    .authenticationEntryPoint(jsonEntryPoint())\n                    .accessDeniedHandler(jsonAccessDenied()));\n        return http.build();\n    }\n\n    @Bean\n    public AuthenticationEntryPoint jsonEntryPoint() {\n        return (HttpServletRequest request, HttpServletResponse response, Exception authException) -> {\n            response.setStatus(401);\n            response.setContentType(\"application/json\");\n            response.getWriter().write(\"{\\\"error\\\":\\\"unauthorized\\\"}\");\n        };\n    }\n\n    @Bean\n    public AccessDeniedHandler jsonAccessDenied() {\n        return (request, response, ex) -> {\n            response.setStatus(403);\n            response.setContentType(\"application/json\");\n            response.getWriter().write(\"{\\\"error\\\":\\\"forbidden\\\"}\");\n        };\n    }\n}\n",
+    "tags": ["spring boot", "spring security", "json", "error-handler"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-89",
+    "title": "Stateless API向けにCSRFを無効化したセキュリティ設定",
+    "description": "JWT等を使う場合にフォームログインやセッションをオフにする基本設定です。",
+    "language": "Java",
+    "code": "package com.example.demo.apisecurity;\n\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.security.config.annotation.web.builders.HttpSecurity;\nimport org.springframework.security.config.http.SessionCreationPolicy;\nimport org.springframework.security.web.SecurityFilterChain;\n\n@Configuration\npublic class ApiSecurityConfig {\n\n    @Bean\n    public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {\n        http\n            .csrf().disable()\n            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))\n            .authorizeHttpRequests(auth -> auth\n                    .requestMatchers(\"/api/public/**\").permitAll()\n                    .anyRequest().authenticated());\n        return http.build();\n    }\n}\n",
+    "tags": ["spring boot", "spring security", "csrf", "stateless"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-90",
+    "title": "HTTPクライアントのログ出力用ClientHttpRequestInterceptor",
+    "description": "RestTemplateのリクエスト/レスポンスをログに出す実用的なインターセプタ例です。",
+    "language": "Java",
+    "code": "package com.example.demo.rtlog;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.http.HttpRequest;\nimport org.springframework.http.client.*;\nimport org.springframework.web.client.RestTemplate;\n\nimport java.io.IOException;\n\n@Configuration\npublic class RestTemplateLoggingConfig {\n\n    @Bean\n    public RestTemplate loggingRestTemplate() {\n        RestTemplate rt = new RestTemplate();\n        rt.getInterceptors().add(new LoggingInterceptor());\n        return rt;\n    }\n\n    static class LoggingInterceptor implements ClientHttpRequestInterceptor {\n        private static final Logger log = LoggerFactory.getLogger(LoggingInterceptor.class);\n\n        @Override\n        public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {\n            log.info(\"--> {} {}\", request.getMethod(), request.getURI());\n            ClientHttpResponse res = execution.execute(request, body);\n            log.info(\"<-- {} {}\", res.getStatusCode(), request.getURI());\n            return res;\n        }\n    }\n}\n",
+    "tags": ["spring boot", "resttemplate", "logging", "interceptor"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-91",
+    "title": "RequestBody・ResponseBodyをまとめてログ出力するFilter",
+    "description": "デバッグ時にJSONボディを確認したいときの実用パターン(本番では注意)。",
+    "language": "Java",
+    "code": "package com.example.demo.bodylog;\n\nimport jakarta.servlet.FilterChain;\nimport jakarta.servlet.ServletException;\nimport jakarta.servlet.http.HttpServletRequest;\nimport jakarta.servlet.http.HttpServletResponse;\nimport org.springframework.stereotype.Component;\nimport org.springframework.web.filter.OncePerRequestFilter;\nimport org.springframework.web.util.ContentCachingRequestWrapper;\nimport org.springframework.web.util.ContentCachingResponseWrapper;\n\nimport java.io.IOException;\nimport java.nio.charset.StandardCharsets;\n\n@Component\npublic class BodyLoggingFilter extends OncePerRequestFilter {\n\n    @Override\n    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)\n            throws ServletException, IOException {\n        ContentCachingRequestWrapper req = new ContentCachingRequestWrapper(request);\n        ContentCachingResponseWrapper res = new ContentCachingResponseWrapper(response);\n        filterChain.doFilter(req, res);\n\n        String reqBody = new String(req.getContentAsByteArray(), StandardCharsets.UTF_8);\n        String resBody = new String(res.getContentAsByteArray(), StandardCharsets.UTF_8);\n        System.out.println(\"request body = \" + reqBody);\n        System.out.println(\"response body = \" + resBody);\n        res.copyBodyToResponse();\n    }\n}\n",
+    "tags": ["spring boot", "logging", "filter", "body"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-92",
+    "title": "ヘルスチェック用の軽量エンドポイント(/healthz)",
+    "description": "ロードバランサ向けに認証なしで叩けるシンプルなHealth API例です。",
+    "language": "Java",
+    "code": "package com.example.demo.healthz;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\npublic class HealthzController {\n\n    @GetMapping(\"/healthz\")\n    public String healthz() {\n        return \"ok\";\n    }\n}\n",
+    "tags": ["spring boot", "health", "ops", "healthz"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-93",
+    "title": "Actuatorエンドポイントの公開範囲をプロファイル別に制御",
+    "description": "localだけ/actuator/**を全公開、本番では/healthと/infoのみ公開する設定例です。",
+    "language": "Java",
+    "code": "package com.example.demo.actuatorconfig;\n\nimport org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties;\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.context.annotation.Profile;\n\n@Configuration\npublic class ActuatorExposureConfig {}\n\n@Configuration\n@Profile(\"local\")\nclass LocalActuatorConfig {\n    @Bean\n    WebEndpointProperties localWebEndpointProperties() {\n        WebEndpointProperties props = new WebEndpointProperties();\n        props.getExposure().getInclude().add(\"*\");\n        return props;\n    }\n}\n\n@Configuration\n@Profile(\"prod\")\nclass ProdActuatorConfig {\n    @Bean\n    WebEndpointProperties prodWebEndpointProperties() {\n        WebEndpointProperties props = new WebEndpointProperties();\n        props.getExposure().getInclude().add(\"health\");\n        props.getExposure().getInclude().add(\"info\");\n        return props;\n    }\n}\n",
+    "tags": ["spring boot", "actuator", "profile", "exposure"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-94",
+    "title": "Enumをリクエストパラメータでケース無視マッピング",
+    "description": "大文字小文字の違いを許容したい時のConverter実装例です。",
+    "language": "Java",
+    "code": "package com.example.demo.enumconv;\n\nimport org.springframework.core.convert.converter.Converter;\nimport org.springframework.stereotype.Component;\n\n@Component\npublic class CaseInsensitiveEnumConverter implements Converter<String, Status> {\n\n    @Override\n    public Status convert(String source) {\n        return Status.valueOf(source.toUpperCase());\n    }\n}\n\nenum Status { NEW, DONE }\n",
+    "tags": ["spring boot", "converter", "enum", "requestparam"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-95",
+    "title": "RestTemplateにタイムアウトとコネクションプール設定を付与",
+    "description": "Apache HttpClientベースで接続・読み取りタイムアウトを設定する例です。",
+    "language": "Java",
+    "code": "package com.example.demo.rtconfig;\n\nimport org.apache.hc.client5.http.impl.classic.CloseableHttpClient;\nimport org.apache.hc.client5.http.impl.classic.HttpClients;\nimport org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;\nimport org.apache.hc.core5.util.Timeout;\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.http.client.HttpComponentsClientHttpRequestFactory;\nimport org.springframework.web.client.RestTemplate;\n\n@Configuration\npublic class HttpClientConfig {\n\n    @Bean\n    public RestTemplate pooledRestTemplate() {\n        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();\n        cm.setMaxTotal(200);\n        cm.setDefaultMaxPerRoute(50);\n\n        CloseableHttpClient httpClient = HttpClients.custom()\n                .setConnectionManager(cm)\n                .setConnectionTimeToLive(Timeout.ofSeconds(30))\n                .build();\n\n        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);\n        factory.setConnectTimeout(5000);\n        factory.setReadTimeout(5000);\n\n        return new RestTemplate(factory);\n    }\n}\n",
+    "tags": ["spring boot", "resttemplate", "timeout", "pool"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-96",
+    "title": "WebClientに共通ヘッダ(例えばAPIキー)を付与",
+    "description": "全リクエストにAPIキーやUser-Agentなどを自動付与する例です。",
+    "language": "Java",
+    "code": "package com.example.demo.wcconfig;\n\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.web.reactive.function.client.ExchangeFilterFunction;\nimport org.springframework.web.reactive.function.client.WebClient;\n\n@Configuration\npublic class WebClientHeaderConfig {\n\n    @Bean\n    public WebClient apiClient() {\n        return WebClient.builder()\n                .baseUrl(\"https://api.example.com\")\n                .defaultHeader(\"X-Api-Key\", \"secret\")\n                .filter(logFilter())\n                .build();\n    }\n\n    private ExchangeFilterFunction logFilter() {\n        return (request, next) -> {\n            System.out.println(\"call: \" + request.method() + \" \" + request.url());\n            return next.exchange(request);\n        };\n    }\n}\n",
+    "tags": ["spring boot", "webclient", "header", "filter"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-97",
+    "title": "ApplicationRunnerで起動時に初期処理を実行",
+    "description": "キャッシュウォームアップや初期データロードなどをStartup時に行う例です。",
+    "language": "Java",
+    "code": "package com.example.demo.startup;\n\nimport org.springframework.boot.ApplicationArguments;\nimport org.springframework.boot.ApplicationRunner;\nimport org.springframework.stereotype.Component;\n\n@Component\npublic class WarmupRunner implements ApplicationRunner {\n\n    private final MasterDataService masterDataService;\n\n    public WarmupRunner(MasterDataService masterDataService) {\n        this.masterDataService = masterDataService;\n    }\n\n    @Override\n    public void run(ApplicationArguments args) {\n        masterDataService.load();\n    }\n}\n",
+    "tags": ["spring boot", "startup", "applicationrunner", "warmup"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-98",
+    "title": "プロファイル別にapplication-*.ymlを切り替え",
+    "description": "@Profileと組み合わせて、local/prodで設定を変える代表的な書き方です。(YAML例付き)",
+    "language": "Java",
+    "code": "package com.example.demo.profileyaml;\n\n// 実装コードは不要で、application.yml側で切り替え\n// application.yml\n// spring:\n//   profiles:\n//     active: local\n// ---\n// spring:\n//   config:\n//     activate:\n//       on-profile: local\n// app:\n//   base-url: http://localhost:8080\n// ---\n// spring:\n//   config:\n//     activate:\n//       on-profile: prod\n// app:\n//   base-url: https://api.example.com\n",
+    "tags": ["spring boot", "profile", "yaml", "config"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-99",
+    "title": "ConfigurableEnvironmentから実行時プロパティを読むユーティリティ",
+    "description": "サービス層などで現在有効なプロファイルや設定値を参照したいときのヘルパーです。",
+    "language": "Java",
+    "code": "package com.example.demo.env;\n\nimport org.springframework.core.env.ConfigurableEnvironment;\nimport org.springframework.stereotype.Component;\n\n@Component\npublic class EnvHelper {\n\n    private final ConfigurableEnvironment env;\n\n    public EnvHelper(ConfigurableEnvironment env) {\n        this.env = env;\n    }\n\n    public boolean isProd() {\n        for (String p : env.getActiveProfiles()) {\n            if (\"prod\".equals(p)) return true;\n        }\n        return false;\n    }\n\n    public String getBaseUrl() {\n        return env.getProperty(\"app.base-url\", \"http://localhost:8080\");\n    }\n}\n",
+    "tags": ["spring boot", "environment", "profile", "configurableenvironment"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  },
+  {
+    "id": "java-spring-100",
+    "title": "Gracefulエラー画面(HTML)とRESTエラー(JSON)を共存させる",
+    "description": "ブラウザアクセス時はエラーHTML、APIアクセス時はJSONを返す実装イメージです。",
+    "language": "Java",
+    "code": "package com.example.demo.errorview;\n\nimport jakarta.servlet.http.HttpServletRequest;\nimport org.springframework.boot.web.error.ErrorAttributeOptions;\nimport org.springframework.boot.web.servlet.error.ErrorAttributes;\nimport org.springframework.boot.web.servlet.error.ErrorController;\nimport org.springframework.http.MediaType;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.stereotype.Controller;\nimport org.springframework.ui.Model;\nimport org.springframework.web.bind.annotation.RequestMapping;\n\nimport java.util.Map;\n\n@Controller\npublic class MixedErrorController implements ErrorController {\n\n    private final ErrorAttributes errorAttributes;\n\n    public MixedErrorController(ErrorAttributes errorAttributes) {\n        this.errorAttributes = errorAttributes;\n    }\n\n    @RequestMapping(value = \"/error\", produces = MediaType.TEXT_HTML_VALUE)\n    public String errorHtml(HttpServletRequest request, Model model) {\n        Map<String, Object> attrs = errorAttributes.getErrorAttributes(null, ErrorAttributeOptions.defaults());\n        model.addAttribute(\"attrs\", attrs);\n        return \"error/custom\"; // templates/error/custom.html\n    }\n\n    @RequestMapping(value = \"/error\", produces = MediaType.APPLICATION_JSON_VALUE)\n    public ResponseEntity<Map<String, Object>> errorJson(HttpServletRequest request) {\n        Map<String, Object> attrs = errorAttributes.getErrorAttributes(null, ErrorAttributeOptions.defaults());\n        int status = (int) attrs.getOrDefault(\"status\", 500);\n        return ResponseEntity.status(status).body(attrs);\n    }\n}\n",
+    "tags": ["spring boot", "error", "html", "json"],
+    "created_at": "2025-12-06 10:00:00",
+    "updated_at": "2025-12-06 10:00:00"
+  }
+]
