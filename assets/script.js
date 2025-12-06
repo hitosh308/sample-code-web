@@ -134,6 +134,12 @@ document.addEventListener('DOMContentLoaded', () => {
     searchForm?.submit();
   });
 
+  if (window.hljs) {
+    document.querySelectorAll('pre code').forEach((block) => {
+      window.hljs.highlightElement(block);
+    });
+  }
+
   function togglePanel(open) {
     if (!filterPanel) return;
     const shouldOpen = open ?? !filterPanel.classList.contains('is-open');
