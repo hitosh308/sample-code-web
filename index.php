@@ -138,7 +138,7 @@ $filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
 <header class="site-header">
     <div class="container">
         <h1>サンプルコード集</h1>
-        <p class="description">複数言語のサンプルコードをタグで絞り込み検索できます。コードはJSONファイルから読み込まれます。</p>
+        <p class="description">複数言語のサンプルコードをタグで絞り込み検索できます。</p>
     </div>
 </header>
 
@@ -190,7 +190,6 @@ $filteredSnippets = filter_snippets_by_keyword($filteredSnippets, $keyword);
                     </div>
                 <?php endif; ?>
 
-                <label for="keyword">キーワード（説明文やコードコメントを検索）</label>
                 <div class="search-input-row">
                     <input type="text" id="keyword" name="keyword" value="<?php echo htmlspecialchars($keyword, ENT_QUOTES, 'UTF-8'); ?>" placeholder="例: ループ, 配列, comment">
                     <button type="submit">検索</button>

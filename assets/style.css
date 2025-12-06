@@ -56,17 +56,23 @@ body {
 .site-header .container {
   position: relative;
   z-index: 1;
+  text-align: center;
 }
 
 .site-header h1 {
   margin: 0 0 10px;
-  font-size: 32px;
-  letter-spacing: 0.5px;
+  font-size: 36px;
+  letter-spacing: 0.8px;
+  background: linear-gradient(135deg, #eef2ff, #c7d2fe, #e0f2fe);
+  -webkit-background-clip: text;
+  color: transparent;
+  text-shadow: 0 4px 22px rgba(0, 0, 0, 0.18);
 }
 
 .site-header .description {
   margin: 0;
   color: rgba(255, 255, 255, 0.78);
+  font-size: 15px;
 }
 
 .site-footer {
@@ -167,6 +173,7 @@ body {
 .search-input-row {
   display: flex;
   gap: 10px;
+  align-items: stretch;
 }
 
 .tag-toggle-group {
@@ -217,6 +224,9 @@ body {
 }
 
 .search-form button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 12px 18px;
   background: var(--primary);
   color: #fff;
@@ -225,6 +235,8 @@ body {
   font-size: 16px;
   cursor: pointer;
   box-shadow: 0 10px 25px rgba(79, 70, 229, 0.24);
+  min-width: 96px;
+  white-space: nowrap;
 }
 
 .search-form button:hover {
