@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const tagControl = tagSelect?.querySelector('.tag-select__control');
   const tagMenu = tagSelect?.querySelector('.tag-select__menu');
   const tagFilterInput = tagSelect?.querySelector('.tag-select__filter');
+  const tagOptionsContainer = tagSelect?.querySelector('.tag-select__options');
   const tagOptions = tagSelect ? Array.from(tagSelect.querySelectorAll('.tag-option')) : [];
   const tagCheckboxes = tagSelect ? Array.from(tagSelect.querySelectorAll('.tag-option input[type="checkbox"]')) : [];
   const searchForm = document.querySelector('.search-form');
@@ -75,12 +76,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
   tagControl?.addEventListener('click', () => toggleTagMenu());
 
-  tagFilterInput?.addEventListener('input', () => {
-    const term = tagFilterInput.value.trim().toLowerCase();
+  const tagFilterEmptyMessage = document.createElement('p');
+  tagFilterEmptyMessage.className = 'tag-select__empty';
+  tagFilterEmptyMessage.textContent = '該当するタグがありません';
+  tagFilterEmptyMessage.hidden = true;
+  if (tagOptionsContainer) {
+    tagOptionsContainer.appendChild(tagFilterEmptyMessage);
+  }
+
+  function filterTagOptions(term = '') {
+    if (!tagOptionsContainer) return;
+
+    const normalizedTerm = term.trim().toLowerCase();
+    let visibleCount = 0;
+
     tagOptions.forEach((option) => {
-      const label = option.dataset.label?.toLowerCase() ?? '';
-      option.hidden = term !== '' && !label.includes(term);
+      const label = option.dataset.label?.toLowerCase() ?? option.textContent?.toLowerCase() ?? '';
+      const isMatch = normalizedTerm === '' || label.includes(normalizedTerm);
+      option.hidden = !isMatch;
+      if (isMatch) {
+        visibleCount += 1;
+      }
     });
+
+    tagFilterEmptyMessage.hidden = visibleCount > 0;
+    tagOptionsContainer.scrollTo({ top: 0 });
+  }
+
+  tagFilterInput?.addEventListener('input', () => {
+    filterTagOptions(tagFilterInput.value);
   });
 
   tagCheckboxes.forEach((input) => {
@@ -129,6 +153,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   updateTagControlLabel();
+
+  filterTagOptions();
 
   languageSelect?.addEventListener('change', () => {
     searchForm?.submit();

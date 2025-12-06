@@ -280,6 +280,14 @@ body {
   gap: 8px;
 }
 
+.tag-select__empty {
+  padding: 6px 4px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  grid-column: 1 / -1;
+}
+
 .tag-option {
   display: flex;
   align-items: center;
